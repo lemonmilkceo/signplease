@@ -8,8 +8,8 @@ import { useAppStore } from "@/lib/store";
 import { ProgressSteps } from "@/components/ui/progress-steps";
 import { StepContainer, StepQuestion } from "@/components/ui/step-container";
 import { AIGenerating } from "@/components/ui/loading";
-import { ArrowLeft, Calendar, Clock } from "lucide-react";
-import { WORK_DAYS, MINIMUM_WAGE_2025 } from "@/lib/contract-types";
+import { ArrowLeft, Calendar, Clock, Wallet, Banknote } from "lucide-react";
+import { WORK_DAYS, MINIMUM_WAGE_2025, WageType } from "@/lib/contract-types";
 import { generateContractContent, createContract, ContractInput } from "@/lib/contract-api";
 import { toast } from "sonner";
 
@@ -67,6 +67,8 @@ export default function CreateContract() {
         const mockContract = {
           id: Date.now().toString(),
           ...contractData,
+          wageType: contractForm.wageType || 'hourly',
+          monthlyWage: contractForm.monthlyWage,
           status: 'draft' as const,
           createdAt: new Date().toISOString().split('T')[0],
         };
@@ -92,7 +94,12 @@ export default function CreateContract() {
       case 1:
         return (contractForm.workerName?.length || 0) >= 2;
       case 2:
-        return (contractForm.hourlyWage || 0) >= MINIMUM_WAGE_2025;
+        if (!contractForm.wageType) return false;
+        if (contractForm.wageType === 'hourly') {
+          return (contractForm.hourlyWage || 0) >= MINIMUM_WAGE_2025;
+        } else {
+          return (contractForm.monthlyWage || 0) > 0;
+        }
       case 3:
         return !!contractForm.startDate;
       case 4:
@@ -160,33 +167,110 @@ export default function CreateContract() {
           {currentStep === 2 && (
             <StepContainer key="step-2" stepKey={2}>
               <StepQuestion
-                question="시급은 얼마로 정하셨나요?"
-                description={`2025년 최저시급은 ${MINIMUM_WAGE_2025.toLocaleString()}원이에요`}
+                question="급여 형태를 선택해주세요"
                 className="mb-8"
               />
-              <div className="relative">
-                <Input
-                  variant="toss"
-                  inputSize="xl"
-                  type="number"
-                  placeholder={MINIMUM_WAGE_2025.toString()}
-                  value={contractForm.hourlyWage || ''}
-                  onChange={(e) => setContractForm({ hourlyWage: Number(e.target.value) })}
-                  className="pr-12"
-                  autoFocus
-                />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body-lg">
-                  원
-                </span>
+              
+              {/* Wage Type Selection */}
+              <div className="flex gap-3 mb-6">
+                <motion.button
+                  className={`flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
+                    contractForm.wageType === 'hourly'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-muted/50 hover:bg-muted'
+                  }`}
+                  onClick={() => setContractForm({ wageType: 'hourly', monthlyWage: undefined })}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    contractForm.wageType === 'hourly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Wallet className="w-6 h-6" />
+                  </div>
+                  <span className={`text-body font-semibold ${
+                    contractForm.wageType === 'hourly' ? 'text-primary' : 'text-muted-foreground'
+                  }`}>시급</span>
+                </motion.button>
+                
+                <motion.button
+                  className={`flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
+                    contractForm.wageType === 'monthly'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-muted/50 hover:bg-muted'
+                  }`}
+                  onClick={() => setContractForm({ wageType: 'monthly', hourlyWage: 0 })}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    contractForm.wageType === 'monthly' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Banknote className="w-6 h-6" />
+                  </div>
+                  <span className={`text-body font-semibold ${
+                    contractForm.wageType === 'monthly' ? 'text-primary' : 'text-muted-foreground'
+                  }`}>월급</span>
+                </motion.button>
               </div>
-              {(contractForm.hourlyWage || 0) > 0 && contractForm.hourlyWage! < MINIMUM_WAGE_2025 && (
-                <motion.p
-                  className="mt-3 text-caption text-destructive"
-                  initial={{ opacity: 0, y: -10 }}
+
+              {/* Wage Input */}
+              {contractForm.wageType && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  최저시급 이상으로 설정해주세요
-                </motion.p>
+                  {contractForm.wageType === 'hourly' ? (
+                    <>
+                      <p className="text-caption text-muted-foreground mb-2">
+                        2025년 최저시급은 {MINIMUM_WAGE_2025.toLocaleString()}원이에요
+                      </p>
+                      <div className="relative">
+                        <Input
+                          variant="toss"
+                          inputSize="xl"
+                          type="number"
+                          placeholder={MINIMUM_WAGE_2025.toString()}
+                          value={contractForm.hourlyWage || ''}
+                          onChange={(e) => setContractForm({ hourlyWage: Number(e.target.value) })}
+                          className="pr-12"
+                          autoFocus
+                        />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body-lg">
+                          원
+                        </span>
+                      </div>
+                      {(contractForm.hourlyWage || 0) > 0 && contractForm.hourlyWage! < MINIMUM_WAGE_2025 && (
+                        <motion.p
+                          className="mt-3 text-caption text-destructive"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          최저시급 이상으로 설정해주세요
+                        </motion.p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-caption text-muted-foreground mb-2">
+                        월 급여를 입력해주세요
+                      </p>
+                      <div className="relative">
+                        <Input
+                          variant="toss"
+                          inputSize="xl"
+                          type="number"
+                          placeholder="2500000"
+                          value={contractForm.monthlyWage || ''}
+                          onChange={(e) => setContractForm({ monthlyWage: Number(e.target.value) })}
+                          className="pr-12"
+                          autoFocus
+                        />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body-lg">
+                          원
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
               )}
             </StepContainer>
           )}

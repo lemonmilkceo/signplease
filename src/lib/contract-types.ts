@@ -1,8 +1,12 @@
+export type WageType = 'hourly' | 'monthly';
+
 export interface ContractData {
   id?: string;
   employerName: string;
   workerName: string;
+  wageType: WageType;
   hourlyWage: number;
+  monthlyWage?: number;
   startDate: string;
   workDays: string[];
   workStartTime: string;
@@ -28,6 +32,7 @@ export const MOCK_CONTRACTS: ContractData[] = [
     id: '1',
     employerName: '김사장',
     workerName: '이영희',
+    wageType: 'hourly',
     hourlyWage: 10030,
     startDate: '2025-01-15',
     workDays: ['월', '화', '수', '목', '금'],
@@ -42,11 +47,13 @@ export const MOCK_CONTRACTS: ContractData[] = [
     id: '2',
     employerName: '김사장',
     workerName: '박철수',
-    hourlyWage: 11000,
+    wageType: 'monthly',
+    hourlyWage: 0,
+    monthlyWage: 2500000,
     startDate: '2025-01-01',
-    workDays: ['토', '일'],
-    workStartTime: '10:00',
-    workEndTime: '17:00',
+    workDays: ['월', '화', '수', '목', '금'],
+    workStartTime: '09:00',
+    workEndTime: '18:00',
     workLocation: '서울시 강남구 테헤란로 123',
     jobDescription: '주방 보조',
     status: 'completed',
