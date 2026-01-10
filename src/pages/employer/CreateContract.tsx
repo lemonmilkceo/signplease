@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { generateContractContent, createContract, ContractInput } from "@/lib/contract-api";
 import { toast } from "sonner";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 8;
 
 export default function CreateContract() {
   const navigate = useNavigate();
@@ -113,6 +113,10 @@ export default function CreateContract() {
         return !!contractForm.workStartTime && !!contractForm.workEndTime;
       case 6:
         return (contractForm.workLocation?.length || 0) > 0;
+      case 7:
+        return (contractForm.paymentDay || 0) >= 1 && (contractForm.paymentDay || 0) <= 31;
+      case 8:
+        return true; // 업무내용은 선택사항
       default:
         return false;
     }
@@ -465,6 +469,51 @@ export default function CreateContract() {
                 placeholder="예: 서울시 강남구 테헤란로 123"
                 value={contractForm.workLocation || ''}
                 onChange={(e) => setContractForm({ workLocation: e.target.value })}
+                autoFocus
+              />
+            </StepContainer>
+          )}
+
+          {currentStep === 7 && (
+            <StepContainer key="step-7" stepKey={7}>
+              <StepQuestion
+                question="임금은 매월 며칠에 지급하나요?"
+                className="mb-8"
+              />
+              <div className="grid grid-cols-7 gap-2">
+                {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                  <motion.button
+                    key={day}
+                    className={`h-12 rounded-xl text-body font-medium transition-all ${
+                      contractForm.paymentDay === day
+                        ? 'bg-primary text-primary-foreground shadow-button'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                    onClick={() => setContractForm({ paymentDay: day })}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {day}
+                  </motion.button>
+                ))}
+              </div>
+              <p className="mt-4 text-caption text-muted-foreground">
+                * 29일 이후는 월마다 일수가 달라 선택할 수 없어요
+              </p>
+            </StepContainer>
+          )}
+
+          {currentStep === 8 && (
+            <StepContainer key="step-8" stepKey={8}>
+              <StepQuestion
+                question="주요 업무 내용을 알려주세요"
+                description="선택사항이에요"
+                className="mb-8"
+              />
+              <textarea
+                className="w-full h-40 p-4 rounded-2xl border-2 border-border bg-background text-body focus:border-primary focus:outline-none transition-colors resize-none"
+                placeholder="예: 홀 서빙, 주문 접수, 매장 청소 등"
+                value={contractForm.jobDescription || ''}
+                onChange={(e) => setContractForm({ jobDescription: e.target.value })}
                 autoFocus
               />
             </StepContainer>
