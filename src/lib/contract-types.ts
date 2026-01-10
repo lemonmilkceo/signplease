@@ -11,6 +11,7 @@ export interface ContractData {
   endDate?: string;
   noEndDate?: boolean;
   workDays: string[];
+  workDaysPerWeek?: number;
   workStartTime: string;
   workEndTime: string;
   workLocation: string;
@@ -67,6 +68,7 @@ export const MOCK_CONTRACTS: ContractData[] = [
 ];
 
 export const WORK_DAYS = ['월', '화', '수', '목', '금', '토', '일'];
+export const WORK_DAYS_PER_WEEK = [1, 2, 3, 4, 5, 6, 7];
 
 export const MINIMUM_WAGE_2025 = 10030;
 export const MINIMUM_WAGE_2026 = 10360;

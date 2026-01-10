@@ -9,7 +9,7 @@ import { ProgressSteps } from "@/components/ui/progress-steps";
 import { StepContainer, StepQuestion } from "@/components/ui/step-container";
 import { AIGenerating } from "@/components/ui/loading";
 import { ArrowLeft, Calendar, Clock, Wallet, Banknote, Info } from "lucide-react";
-import { WORK_DAYS, MINIMUM_WAGE_2026, MINIMUM_WAGE_WITH_HOLIDAY_2026, WageType } from "@/lib/contract-types";
+import { WORK_DAYS_PER_WEEK, MINIMUM_WAGE_2026, MINIMUM_WAGE_WITH_HOLIDAY_2026, WageType } from "@/lib/contract-types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateContractContent, createContract, ContractInput } from "@/lib/contract-api";
 import { toast } from "sonner";
@@ -108,7 +108,7 @@ export default function CreateContract() {
         // 시작일 필수, 종료일은 noEndDate가 true이거나 endDate가 있으면 유효
         return !!contractForm.startDate && (contractForm.noEndDate || !!contractForm.endDate);
       case 4:
-        return (contractForm.workDays?.length || 0) > 0;
+        return (contractForm.workDaysPerWeek || 0) >= 1;
       case 5:
         return !!contractForm.workStartTime && !!contractForm.workEndTime;
       case 6:
@@ -390,23 +390,22 @@ export default function CreateContract() {
           {currentStep === 4 && (
             <StepContainer key="step-4" stepKey={4}>
               <StepQuestion
-                question="어떤 요일에 근무하나요?"
-                description="여러 개 선택할 수 있어요"
+                question="주 몇 일 근무하나요?"
                 className="mb-8"
               />
-              <div className="flex flex-wrap gap-3">
-                {WORK_DAYS.map((day) => (
+              <div className="grid grid-cols-4 gap-3">
+                {WORK_DAYS_PER_WEEK.map((days) => (
                   <motion.button
-                    key={day}
-                    className={`w-14 h-14 rounded-2xl text-body font-semibold transition-all ${
-                      contractForm.workDays?.includes(day)
+                    key={days}
+                    className={`h-14 rounded-2xl text-body font-semibold transition-all ${
+                      contractForm.workDaysPerWeek === days
                         ? 'bg-primary text-primary-foreground shadow-button'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     }`}
-                    onClick={() => toggleWorkDay(day)}
+                    onClick={() => setContractForm({ workDaysPerWeek: days })}
                     whileTap={{ scale: 0.95 }}
                   >
-                    {day}
+                    주 {days}일
                   </motion.button>
                 ))}
               </div>
