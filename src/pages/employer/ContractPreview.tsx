@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,9 +19,13 @@ import {
   Briefcase,
   CreditCard,
   Sparkles,
+  Scale,
+  X,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getContract, signContractAsEmployer, Contract } from "@/lib/contract-api";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ContractPreview() {
   const navigate = useNavigate();
@@ -33,6 +37,9 @@ export default function ContractPreview() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
+  const [isLegalAdviceOpen, setIsLegalAdviceOpen] = useState(false);
+  const [legalAdvice, setLegalAdvice] = useState<string | null>(null);
+  const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -123,6 +130,50 @@ export default function ContractPreview() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("링크가 복사되었습니다!");
+  };
+
+  const handleGetLegalAdvice = async () => {
+    if (legalAdvice) {
+      setIsLegalAdviceOpen(true);
+      return;
+    }
+
+    setIsLegalAdviceOpen(true);
+    setIsLoadingAdvice(true);
+
+    try {
+      const contractData = {
+        employerName: contract?.employer_name || '',
+        workerName: contract?.worker_name || '',
+        hourlyWage: contract?.hourly_wage || 0,
+        includeWeeklyHolidayPay: contractForm.includeWeeklyHolidayPay,
+        startDate: contractForm.startDate || contract?.start_date,
+        endDate: contractForm.endDate,
+        noEndDate: contractForm.noEndDate,
+        workStartTime: contract?.work_start_time || '',
+        workEndTime: contract?.work_end_time || '',
+        workDaysPerWeek: contractForm.workDaysPerWeek,
+        workLocation: contract?.work_location || '',
+        paymentMonth: contractForm.paymentMonth,
+        paymentDay: contractForm.paymentDay,
+        paymentEndOfMonth: contractForm.paymentEndOfMonth,
+        jobDescription: contractForm.jobDescription || contract?.job_description,
+      };
+
+      const { data, error } = await supabase.functions.invoke('contract-legal-advice', {
+        body: { contractData }
+      });
+
+      if (error) throw error;
+      
+      setLegalAdvice(data.advice);
+    } catch (error) {
+      console.error("Legal advice error:", error);
+      toast.error("법적 조언을 가져오는데 실패했습니다.");
+      setIsLegalAdviceOpen(false);
+    } finally {
+      setIsLoadingAdvice(false);
+    }
   };
 
   // 근무일수 포맷팅
@@ -297,8 +348,8 @@ export default function ContractPreview() {
             )}
           </div>
 
-          {/* AI Notice */}
-          <div className="px-6 pb-6">
+          {/* AI Notice & Legal Advice Button */}
+          <div className="px-6 pb-6 space-y-3">
             <div className="p-4 rounded-2xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-200 dark:border-violet-800">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
@@ -310,6 +361,26 @@ export default function ContractPreview() {
                 최신 근로기준법에 맞게 작성되었습니다.
               </p>
             </div>
+
+            {/* AI Legal Advice Button */}
+            <motion.button
+              onClick={handleGetLegalAdvice}
+              className="w-full p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 flex items-center gap-3 hover:shadow-md transition-all"
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                <Scale className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-body font-medium text-emerald-700 dark:text-emerald-300">
+                  AI 법적 조언 받기
+                </p>
+                <p className="text-caption text-emerald-600/70 dark:text-emerald-400/70">
+                  계약서의 법적 적합성을 분석해드려요
+                </p>
+              </div>
+              <Sparkles className="w-5 h-5 text-emerald-500" />
+            </motion.button>
           </div>
         </motion.div>
       </div>
@@ -390,6 +461,74 @@ export default function ContractPreview() {
         onClose={() => setIsSignatureOpen(false)}
         onSave={handleSign}
       />
+
+      {/* Legal Advice Modal */}
+      <AnimatePresence>
+        {isLegalAdviceOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsLegalAdviceOpen(false)}
+          >
+            <motion.div
+              className="w-full max-w-lg bg-background rounded-t-3xl max-h-[85vh] flex flex-col"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                    <Scale className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-body-lg font-semibold text-foreground">AI 법적 조언</h3>
+                    <p className="text-caption text-muted-foreground">계약서 분석 결과</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsLegalAdviceOpen(false)}
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {isLoadingAdvice ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4">
+                    <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                    <p className="text-body text-muted-foreground">계약서를 분석하고 있어요...</p>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className="whitespace-pre-wrap text-body text-foreground leading-relaxed">
+                      {legalAdvice}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="full"
+                  onClick={() => setIsLegalAdviceOpen(false)}
+                >
+                  닫기
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
