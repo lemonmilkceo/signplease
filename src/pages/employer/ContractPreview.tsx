@@ -427,8 +427,8 @@ export default function ContractPreview() {
                   </div>
                 )}
 
-                {/* 주휴수당 포함 시급인 경우 안내 */}
-                {wageBreakdown && contractForm.includeWeeklyHolidayPay && (
+                {/* 주휴수당 포함인 경우 안내 - 시급일 때만 표시 */}
+                {wageBreakdown && contractForm.includeWeeklyHolidayPay && contractForm.wageType !== 'monthly' && (
                   <div className="mt-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 space-y-2">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Info className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
@@ -437,7 +437,7 @@ export default function ContractPreview() {
                       </p>
                     </div>
                     <div className="flex justify-between text-caption">
-                      <span className="text-green-600/80 dark:text-green-400/80">월 예상 급여 (주 {wageBreakdown.weeklyWorkHours}시간 기준)</span>
+                      <span className="text-green-600/80 dark:text-green-400/80">월 예상 급여 (주 {Math.round(wageBreakdown.weeklyWorkHours)}시간 기준)</span>
                       <span className="font-bold text-green-700 dark:text-green-300">
                         {Math.round(contract.hourly_wage * wageBreakdown.weeklyWorkHours * 4.345).toLocaleString()}원
                       </span>
