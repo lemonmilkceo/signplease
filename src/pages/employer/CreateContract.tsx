@@ -134,7 +134,8 @@ export default function CreateContract() {
         // 시작일 필수, 종료일은 noEndDate가 true이거나 endDate가 있으면 유효
         return !!contractForm.startDate && (contractForm.noEndDate || !!contractForm.endDate);
       case 5:
-        return (contractForm.workDaysPerWeek || 0) >= 1;
+        // 주 N일 또는 특정 요일 중 하나가 선택되어야 함
+        return (contractForm.workDaysPerWeek || 0) >= 1 || (contractForm.workDays?.length || 0) >= 1;
       case 6:
         return !!contractForm.workStartTime && !!contractForm.workEndTime;
       case 7:
@@ -519,20 +520,88 @@ export default function CreateContract() {
             </StepContainer>
           )}
 
-          {/* Step 5: 주 근무일수 */}
+          {/* Step 5: 근무일 설정 */}
           {currentStep === 5 && (
             <StepContainer key="step-5" stepKey={5}>
-              <StepQuestion question="주 몇 일 근무하나요?" className="mb-8" />
-              <div className="grid grid-cols-4 gap-3">
-                {WORK_DAYS_PER_WEEK.map((days) => (
-                  <motion.button
-                    key={days}
-                    className={`h-14 rounded-2xl text-body font-semibold transition-all ${contractForm.workDaysPerWeek === days ? 'bg-primary text-primary-foreground shadow-button' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                    onClick={() => setContractForm({ workDaysPerWeek: days })}
-                    whileTap={{ scale: 0.95 }}
-                  >주 {days}일</motion.button>
-                ))}
+              <StepQuestion question="근무일을 어떻게 정할까요?" className="mb-6" />
+              
+              {/* 선택 방식 토글 */}
+              <div className="flex gap-2 mb-6">
+                <button
+                  className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+                    !contractForm.workDays?.length || contractForm.workDaysPerWeek
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                  onClick={() => {
+                    setContractForm({ workDays: [], workDaysPerWeek: contractForm.workDaysPerWeek || 5 });
+                  }}
+                >
+                  주 N일
+                </button>
+                <button
+                  className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+                    contractForm.workDays?.length && !contractForm.workDaysPerWeek
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                  onClick={() => {
+                    setContractForm({ workDaysPerWeek: undefined, workDays: contractForm.workDays?.length ? contractForm.workDays : ['월', '화', '수', '목', '금'] });
+                  }}
+                >
+                  특정 요일
+                </button>
               </div>
+
+              {/* 주 N일 선택 */}
+              {(!contractForm.workDays?.length || contractForm.workDaysPerWeek) && (
+                <div className="space-y-3">
+                  <p className="text-caption text-muted-foreground">주 몇 일 근무하나요?</p>
+                  <div className="grid grid-cols-4 gap-3">
+                    {WORK_DAYS_PER_WEEK.map((days) => (
+                      <motion.button
+                        key={days}
+                        className={`h-14 rounded-2xl text-body font-semibold transition-all ${contractForm.workDaysPerWeek === days ? 'bg-primary text-primary-foreground shadow-button' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                        onClick={() => setContractForm({ workDaysPerWeek: days, workDays: [] })}
+                        whileTap={{ scale: 0.95 }}
+                      >주 {days}일</motion.button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 특정 요일 선택 */}
+              {contractForm.workDays?.length > 0 && !contractForm.workDaysPerWeek && (
+                <div className="space-y-3">
+                  <p className="text-caption text-muted-foreground">근무할 요일을 선택하세요</p>
+                  <div className="grid grid-cols-7 gap-2">
+                    {['월', '화', '수', '목', '금', '토', '일'].map((day) => (
+                      <motion.button
+                        key={day}
+                        className={`h-12 rounded-xl text-body font-semibold transition-all ${
+                          contractForm.workDays?.includes(day)
+                            ? 'bg-primary text-primary-foreground shadow-button'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                        onClick={() => {
+                          const currentDays = contractForm.workDays || [];
+                          if (currentDays.includes(day)) {
+                            setContractForm({ workDays: currentDays.filter((d) => d !== day) });
+                          } else {
+                            setContractForm({ workDays: [...currentDays, day] });
+                          }
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {day}
+                      </motion.button>
+                    ))}
+                  </div>
+                  <p className="text-caption text-muted-foreground text-center">
+                    선택: {contractForm.workDays?.join(', ') || '없음'}
+                  </p>
+                </div>
+              )}
             </StepContainer>
           )}
 
