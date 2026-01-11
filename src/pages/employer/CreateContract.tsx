@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { WORK_DAYS_PER_WEEK, MINIMUM_WAGE_2026, MINIMUM_WAGE_WITH_HOLIDAY_2026, 
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateContractContent, createContract, ContractInput } from "@/lib/contract-api";
 import { toast } from "sonner";
+import { AllowanceCalculator } from "@/components/allowance-calculator";
+import { parseWorkTime } from "@/lib/wage-utils";
 
 const TOTAL_STEPS = 10;
 const BREAK_TIME_OPTIONS = [0, 30, 60, 90, 120];
@@ -581,28 +583,52 @@ export default function CreateContract() {
               {contractForm.businessSize === 'over5' ? (
                 <>
                   <StepQuestion question="포괄임금 수당 항목을 입력해주세요" description="5인 이상 사업장은 각 수당 금액을 명시해야 법적 효력이 있어요" className="mb-6" />
-                  <div className="space-y-4">
+                  <div className="space-y-5">
+                    {/* 연장근로수당 */}
                     <div>
                       <p className="text-caption text-muted-foreground mb-2">연장근로수당 (월 예상)</p>
                       <div className="relative">
                         <Input variant="toss" inputSize="lg" type="number" placeholder="0" value={contractForm.comprehensiveWageDetails?.overtimeAllowance || ''} onChange={(e) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, overtimeAllowance: Number(e.target.value) || undefined } })} className="pr-12" />
                         <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body">원</span>
                       </div>
+                      <AllowanceCalculator
+                        type="overtime"
+                        hourlyWage={contractForm.hourlyWage || MINIMUM_WAGE_2026}
+                        dailyWorkHours={parseWorkTime(contractForm.workStartTime || '09:00', contractForm.workEndTime || '18:00', contractForm.breakTimeMinutes || 0)}
+                        onCalculate={(amount) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, overtimeAllowance: amount } })}
+                      />
                     </div>
+                    
+                    {/* 휴일근로수당 */}
                     <div>
                       <p className="text-caption text-muted-foreground mb-2">휴일근로수당 (월 예상)</p>
                       <div className="relative">
                         <Input variant="toss" inputSize="lg" type="number" placeholder="0" value={contractForm.comprehensiveWageDetails?.holidayAllowance || ''} onChange={(e) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, holidayAllowance: Number(e.target.value) || undefined } })} className="pr-12" />
                         <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body">원</span>
                       </div>
+                      <AllowanceCalculator
+                        type="holiday"
+                        hourlyWage={contractForm.hourlyWage || MINIMUM_WAGE_2026}
+                        dailyWorkHours={parseWorkTime(contractForm.workStartTime || '09:00', contractForm.workEndTime || '18:00', contractForm.breakTimeMinutes || 0)}
+                        onCalculate={(amount) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, holidayAllowance: amount } })}
+                      />
                     </div>
+                    
+                    {/* 연차유급휴가 수당 */}
                     <div>
                       <p className="text-caption text-muted-foreground mb-2">연차유급휴가 수당 (연간)</p>
                       <div className="relative">
                         <Input variant="toss" inputSize="lg" type="number" placeholder="0" value={contractForm.comprehensiveWageDetails?.annualLeaveAllowance || ''} onChange={(e) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, annualLeaveAllowance: Number(e.target.value) || undefined } })} className="pr-12" />
                         <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body">원</span>
                       </div>
+                      <AllowanceCalculator
+                        type="annualLeave"
+                        hourlyWage={contractForm.hourlyWage || MINIMUM_WAGE_2026}
+                        dailyWorkHours={parseWorkTime(contractForm.workStartTime || '09:00', contractForm.workEndTime || '18:00', contractForm.breakTimeMinutes || 0)}
+                        onCalculate={(amount) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, annualLeaveAllowance: amount } })}
+                      />
                     </div>
+                    
                     <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                       <p className="text-caption text-blue-700 dark:text-blue-300"><Info className="w-4 h-4 inline mr-1" />포괄임금 계약의 법적 효력을 위해 최소 1개 이상의 수당 항목을 입력해주세요.</p>
                     </div>
