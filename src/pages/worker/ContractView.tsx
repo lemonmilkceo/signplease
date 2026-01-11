@@ -88,7 +88,7 @@ export default function WorkerContractView() {
       icon: <Wallet className="w-8 h-8" />,
       title: "시급",
       value: `${contract.hourly_wage.toLocaleString()}원`,
-      description: "2025년 최저시급은 10,030원입니다",
+      description: "주 15시간 미만: 동일 시급 적용 (주휴수당 미발생)\n주 15시간 이상: 주휴수당 포함 시급으로 적용",
       helpTerm: "시급",
     },
     {
