@@ -508,18 +508,22 @@ export default function ContractPreview() {
                 </div>
               )}
               
-              {/* 주휴수당 포함 시급인 경우 안내 */}
+              {/* 주휴수당 포함인 경우 안내 */}
               {contractForm.includeWeeklyHolidayPay && (
                 <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700 space-y-2">
                   <p className="text-caption font-medium text-blue-700 dark:text-blue-300">임금 구성 내역</p>
                   <div className="flex justify-between text-caption">
-                    <span className="text-blue-600/80 dark:text-blue-400/80">시급 (주휴수당 포함)</span>
+                    <span className="text-blue-600/80 dark:text-blue-400/80">
+                      {contractForm.wageType === 'monthly' ? '월급 (주휴수당 포함)' : '시급 (주휴수당 포함)'}
+                    </span>
                     <span className="font-medium text-blue-700 dark:text-blue-300">
-                      {contract.hourly_wage.toLocaleString()}원
+                      {contractForm.wageType === 'monthly' && contractForm.monthlyWage
+                        ? `${contractForm.monthlyWage.toLocaleString()}원`
+                        : `${contract.hourly_wage.toLocaleString()}원`}
                     </span>
                   </div>
                   <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-                    ※ 주휴수당이 시급에 이미 포함되어 있어 별도 계산하지 않습니다.
+                    ※ 주휴수당이 {contractForm.wageType === 'monthly' ? '월급' : '시급'}에 이미 포함되어 있어 별도 계산하지 않습니다.
                   </p>
                 </div>
               )}
