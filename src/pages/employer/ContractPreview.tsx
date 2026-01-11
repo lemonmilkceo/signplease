@@ -433,10 +433,14 @@ export default function ContractPreview() {
                     <div className="flex items-center gap-1.5 mb-2">
                       <Info className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                       <p className="text-caption font-medium text-green-700 dark:text-green-300">
-                        주휴수당이 시급에 포함되어 있습니다
+                        주휴수당 포함 시급
                       </p>
                     </div>
-                    <div className="flex justify-between text-caption">
+                    <div className="text-xs text-green-600/80 dark:text-green-400/80 space-y-0.5">
+                      <p>• 주 15시간 미만: 동일 시급 적용 (주휴수당 미발생)</p>
+                      <p>• 주 15시간 이상: 주휴수당 포함 시급으로 적용</p>
+                    </div>
+                    <div className="flex justify-between text-caption pt-2 border-t border-green-200 dark:border-green-700">
                       <span className="text-green-600/80 dark:text-green-400/80">월 예상 급여 (주 {Math.round(wageBreakdown.weeklyWorkHours)}시간 기준)</span>
                       <span className="font-bold text-green-700 dark:text-green-300">
                         {Math.round(contract.hourly_wage * wageBreakdown.weeklyWorkHours * 4.345).toLocaleString()}원
@@ -522,8 +526,15 @@ export default function ContractPreview() {
                         : `${contract.hourly_wage.toLocaleString()}원`}
                     </span>
                   </div>
+                  <div className="mt-2 p-2 rounded-lg bg-blue-100/50 dark:bg-blue-800/30">
+                    <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">주휴수당 적용 기준</p>
+                    <ul className="text-xs text-blue-600/80 dark:text-blue-400/80 space-y-0.5">
+                      <li>• 주 15시간 미만 근무 시: 동일 {contractForm.wageType === 'monthly' ? '월급' : '시급'} 적용 (주휴수당 미발생)</li>
+                      <li>• 주 15시간 이상 근무 시: 주휴수당이 포함된 {contractForm.wageType === 'monthly' ? '월급' : '시급'}으로 적용</li>
+                    </ul>
+                  </div>
                   <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-                    ※ 주휴수당이 {contractForm.wageType === 'monthly' ? '월급' : '시급'}에 이미 포함되어 있어 별도 계산하지 않습니다.
+                    ※ 주휴수당 발생 여부와 관계없이 명시된 {contractForm.wageType === 'monthly' ? '월급' : '시급'}을 일괄 지급하므로 별도 계산하지 않습니다.
                   </p>
                 </div>
               )}
