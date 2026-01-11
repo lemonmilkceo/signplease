@@ -1,4 +1,13 @@
 export type WageType = 'hourly' | 'monthly';
+export type BusinessSize = 'under5' | 'over5'; // 5인 미만 / 5인 이상
+
+// 포괄임금 수당 세부 내역 (5인 이상 사업장용)
+export interface ComprehensiveWageDetails {
+  overtimeAllowance?: number; // 연장근로수당
+  nightAllowance?: number; // 야간근로수당
+  holidayAllowance?: number; // 휴일근로수당
+  annualLeaveAllowance?: number; // 연차유급휴가 수당
+}
 
 export interface ContractData {
   id?: string;
@@ -26,6 +35,8 @@ export interface ContractData {
   workerSignature?: string;
   includeWeeklyHolidayPay?: boolean;
   isComprehensiveWage?: boolean; // 포괄임금계약 여부
+  businessSize?: BusinessSize; // 사업장 규모
+  comprehensiveWageDetails?: ComprehensiveWageDetails; // 포괄임금 수당 세부 내역
 }
 
 export interface User {

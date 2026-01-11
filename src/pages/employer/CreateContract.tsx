@@ -8,13 +8,13 @@ import { useAppStore } from "@/lib/store";
 import { ProgressSteps } from "@/components/ui/progress-steps";
 import { StepContainer, StepQuestion } from "@/components/ui/step-container";
 import { AIGenerating } from "@/components/ui/loading";
-import { ArrowLeft, Calendar, Clock, Wallet, Banknote, Info, Sparkles, Coffee } from "lucide-react";
-import { WORK_DAYS_PER_WEEK, MINIMUM_WAGE_2026, MINIMUM_WAGE_WITH_HOLIDAY_2026, JOB_KEYWORDS, WageType } from "@/lib/contract-types";
+import { ArrowLeft, Calendar, Clock, Wallet, Banknote, Info, Sparkles, Coffee, Building2, Users } from "lucide-react";
+import { WORK_DAYS_PER_WEEK, MINIMUM_WAGE_2026, MINIMUM_WAGE_WITH_HOLIDAY_2026, JOB_KEYWORDS, WageType, BusinessSize } from "@/lib/contract-types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateContractContent, createContract, ContractInput } from "@/lib/contract-api";
 import { toast } from "sonner";
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 const BREAK_TIME_OPTIONS = [0, 30, 60, 90, 120];
 
 export default function CreateContract() {
@@ -94,8 +94,10 @@ export default function CreateContract() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return (contractForm.workerName?.length || 0) >= 2;
+        return !!contractForm.businessSize; // 사업장 규모 선택 필수
       case 2:
+        return (contractForm.workerName?.length || 0) >= 2;
+      case 3:
         if (!contractForm.wageType) return false;
         if (contractForm.wageType === 'hourly') {
           const minWage = contractForm.includeWeeklyHolidayPay 
@@ -105,24 +107,29 @@ export default function CreateContract() {
         } else {
           return (contractForm.monthlyWage || 0) > 0;
         }
-      case 3:
+      case 4:
         // 시작일 필수, 종료일은 noEndDate가 true이거나 endDate가 있으면 유효
         return !!contractForm.startDate && (contractForm.noEndDate || !!contractForm.endDate);
-      case 4:
-        return (contractForm.workDaysPerWeek || 0) >= 1;
       case 5:
-        return !!contractForm.workStartTime && !!contractForm.workEndTime;
+        return (contractForm.workDaysPerWeek || 0) >= 1;
       case 6:
-        return contractForm.breakTimeMinutes !== undefined; // 휴게시간 필수
+        return !!contractForm.workStartTime && !!contractForm.workEndTime;
       case 7:
-        return (contractForm.workLocation?.length || 0) > 0;
+        return contractForm.breakTimeMinutes !== undefined; // 휴게시간 필수
       case 8:
+        return (contractForm.workLocation?.length || 0) > 0;
+      case 9:
         // 말일지급이거나 지급일이 선택되어야 유효
         const hasPaymentDay = (contractForm.paymentDay || 0) >= 1 && (contractForm.paymentDay || 0) <= 28;
         const isEndOfMonth = contractForm.paymentEndOfMonth === true;
         return (hasPaymentDay || isEndOfMonth) && !!contractForm.paymentMonth;
-      case 9:
-        return true; // 업무내용은 선택사항
+      case 10:
+        // 5인 이상 사업장일 경우 포괄임금 수당 세부 내역 필수
+        if (contractForm.businessSize === 'over5') {
+          const details = contractForm.comprehensiveWageDetails;
+          return !!(details?.overtimeAllowance || details?.holidayAllowance || details?.annualLeaveAllowance);
+        }
+        return true; // 5인 미만은 선택사항
       default:
         return false;
     }
@@ -162,8 +169,78 @@ export default function CreateContract() {
       {/* Content */}
       <div className="flex-1 px-6 py-4">
         <AnimatePresence mode="wait">
+          {/* Step 1: 사업장 규모 선택 */}
           {currentStep === 1 && (
             <StepContainer key="step-1" stepKey={1}>
+              <StepQuestion
+                question="사장님, 사업장 규모를 선택해주세요"
+                description="상시 근로자 수에 따라 근로기준법 적용이 달라져요"
+                className="mb-8"
+              />
+              <div className="space-y-4">
+                <motion.button
+                  className={`w-full p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${
+                    contractForm.businessSize === 'under5'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-muted/50 hover:bg-muted'
+                  }`}
+                  onClick={() => setContractForm({ businessSize: 'under5' })}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    contractForm.businessSize === 'under5' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className={`text-body font-semibold ${
+                      contractForm.businessSize === 'under5' ? 'text-primary' : 'text-foreground'
+                    }`}>5인 미만 사업장</p>
+                    <p className="text-caption text-muted-foreground">일부 근로기준법 적용 제외</p>
+                  </div>
+                </motion.button>
+                
+                <motion.button
+                  className={`w-full p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${
+                    contractForm.businessSize === 'over5'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-muted/50 hover:bg-muted'
+                  }`}
+                  onClick={() => setContractForm({ businessSize: 'over5' })}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    contractForm.businessSize === 'over5' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className={`text-body font-semibold ${
+                      contractForm.businessSize === 'over5' ? 'text-primary' : 'text-foreground'
+                    }`}>5인 이상 사업장</p>
+                    <p className="text-caption text-muted-foreground">근로기준법 전면 적용</p>
+                  </div>
+                </motion.button>
+
+                {contractForm.businessSize === 'over5' && (
+                  <motion.div
+                    className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <p className="text-caption text-amber-700 dark:text-amber-300">
+                      <Info className="w-4 h-4 inline mr-1" />
+                      5인 이상 사업장은 포괄임금 계약 시 각 수당의 금액을 세부적으로 명시해야 법적 효력이 있어요.
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+            </StepContainer>
+          )}
+
+          {/* Step 2: 근로자 이름 */}
+          {currentStep === 2 && (
+            <StepContainer key="step-2" stepKey={2}>
               <StepQuestion
                 question="사장님, 근로자의 성함은 무엇인가요?"
                 className="mb-8"
@@ -179,8 +256,9 @@ export default function CreateContract() {
             </StepContainer>
           )}
 
-          {currentStep === 2 && (
-            <StepContainer key="step-2" stepKey={2}>
+          {/* Step 3: 급여 형태 */}
+          {currentStep === 3 && (
+            <StepContainer key="step-3" stepKey={3}>
               <StepQuestion
                 question="급여 형태를 선택해주세요"
                 className="mb-8"
@@ -328,8 +406,9 @@ export default function CreateContract() {
             </StepContainer>
           )}
 
-          {currentStep === 3 && (
-            <StepContainer key="step-3" stepKey={3}>
+          {/* Step 4: 근무 기간 */}
+          {currentStep === 4 && (
+            <StepContainer key="step-4" stepKey={4}>
               <StepQuestion
                 question="근무 기간을 알려주세요"
                 className="mb-8"
@@ -399,361 +478,152 @@ export default function CreateContract() {
             </StepContainer>
           )}
 
-          {currentStep === 4 && (
-            <StepContainer key="step-4" stepKey={4}>
-              <StepQuestion
-                question="주 몇 일 근무하나요?"
-                className="mb-8"
-              />
+          {/* Step 5: 주 근무일수 */}
+          {currentStep === 5 && (
+            <StepContainer key="step-5" stepKey={5}>
+              <StepQuestion question="주 몇 일 근무하나요?" className="mb-8" />
               <div className="grid grid-cols-4 gap-3">
                 {WORK_DAYS_PER_WEEK.map((days) => (
                   <motion.button
                     key={days}
-                    className={`h-14 rounded-2xl text-body font-semibold transition-all ${
-                      contractForm.workDaysPerWeek === days
-                        ? 'bg-primary text-primary-foreground shadow-button'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
+                    className={`h-14 rounded-2xl text-body font-semibold transition-all ${contractForm.workDaysPerWeek === days ? 'bg-primary text-primary-foreground shadow-button' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                     onClick={() => setContractForm({ workDaysPerWeek: days })}
                     whileTap={{ scale: 0.95 }}
-                  >
-                    주 {days}일
+                  >주 {days}일</motion.button>
+                ))}
+              </div>
+            </StepContainer>
+          )}
+
+          {/* Step 6: 근무 시간 */}
+          {currentStep === 6 && (
+            <StepContainer key="step-6" stepKey={6}>
+              <StepQuestion question="근무 시간을 알려주세요" className="mb-8" />
+              <div className="space-y-6">
+                <div>
+                  <p className="text-body font-medium text-foreground mb-3">출근 시간</p>
+                  <div className="flex items-center gap-3">
+                    <select className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer" value={contractForm.workStartTime?.split(':')[0] || '09'} onChange={(e) => { const minutes = contractForm.workStartTime?.split(':')[1] || '00'; setContractForm({ workStartTime: `${e.target.value}:${minutes}` }); }}>
+                      {Array.from({ length: 24 }, (_, i) => (<option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}시</option>))}
+                    </select>
+                    <span className="text-muted-foreground text-xl">:</span>
+                    <select className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer" value={contractForm.workStartTime?.split(':')[1] || '00'} onChange={(e) => { const hours = contractForm.workStartTime?.split(':')[0] || '09'; setContractForm({ workStartTime: `${hours}:${e.target.value}` }); }}>
+                      {['00', '10', '20', '30', '40', '50'].map((min) => (<option key={min} value={min}>{min}분</option>))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-body font-medium text-foreground mb-3">퇴근 시간</p>
+                  <div className="flex items-center gap-3">
+                    <select className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer" value={contractForm.workEndTime?.split(':')[0] || '18'} onChange={(e) => { const minutes = contractForm.workEndTime?.split(':')[1] || '00'; setContractForm({ workEndTime: `${e.target.value}:${minutes}` }); }}>
+                      {Array.from({ length: 24 }, (_, i) => (<option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}시</option>))}
+                    </select>
+                    <span className="text-muted-foreground text-xl">:</span>
+                    <select className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer" value={contractForm.workEndTime?.split(':')[1] || '00'} onChange={(e) => { const hours = contractForm.workEndTime?.split(':')[0] || '18'; setContractForm({ workEndTime: `${hours}:${e.target.value}` }); }}>
+                      {['00', '10', '20', '30', '40', '50'].map((min) => (<option key={min} value={min}>{min}분</option>))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </StepContainer>
+          )}
+
+          {/* Step 7: 휴게시간 */}
+          {currentStep === 7 && (
+            <StepContainer key="step-7" stepKey={7}>
+              <StepQuestion question="휴게시간을 알려주세요" description="4시간 근무 시 30분, 8시간 근무 시 1시간 이상 휴게시간이 필요해요" className="mb-8" />
+              <div className="grid grid-cols-3 gap-3">
+                {BREAK_TIME_OPTIONS.map((minutes) => (
+                  <motion.button key={minutes} className={`h-16 rounded-2xl text-body font-semibold transition-all flex flex-col items-center justify-center gap-1 ${contractForm.breakTimeMinutes === minutes ? 'bg-primary text-primary-foreground shadow-button' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => setContractForm({ breakTimeMinutes: minutes })} whileTap={{ scale: 0.95 }}>
+                    <Coffee className={`w-5 h-5 ${contractForm.breakTimeMinutes === minutes ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                    <span>{minutes === 0 ? '없음' : `${minutes}분`}</span>
                   </motion.button>
                 ))}
               </div>
             </StepContainer>
           )}
 
-          {currentStep === 5 && (
-            <StepContainer key="step-5" stepKey={5}>
-              <StepQuestion
-                question="근무 시간을 알려주세요"
-                className="mb-8"
-              />
-              <div className="space-y-6">
-                {/* 시작 시간 */}
-                <div>
-                  <p className="text-body font-medium text-foreground mb-3">출근 시간</p>
-                  <div className="flex items-center gap-3">
-                    <select
-                      className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer"
-                      value={contractForm.workStartTime?.split(':')[0] || '09'}
-                      onChange={(e) => {
-                        const minutes = contractForm.workStartTime?.split(':')[1] || '00';
-                        setContractForm({ workStartTime: `${e.target.value}:${minutes}` });
-                      }}
-                    >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i.toString().padStart(2, '0')}>
-                          {i.toString().padStart(2, '0')}시
-                        </option>
-                      ))}
-                    </select>
-                    <span className="text-muted-foreground text-xl">:</span>
-                    <select
-                      className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer"
-                      value={contractForm.workStartTime?.split(':')[1] || '00'}
-                      onChange={(e) => {
-                        const hours = contractForm.workStartTime?.split(':')[0] || '09';
-                        setContractForm({ workStartTime: `${hours}:${e.target.value}` });
-                      }}
-                    >
-                      {['00', '10', '20', '30', '40', '50'].map((min) => (
-                        <option key={min} value={min}>
-                          {min}분
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* 종료 시간 */}
-                <div>
-                  <p className="text-body font-medium text-foreground mb-3">퇴근 시간</p>
-                  <div className="flex items-center gap-3">
-                    <select
-                      className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer"
-                      value={contractForm.workEndTime?.split(':')[0] || '18'}
-                      onChange={(e) => {
-                        const minutes = contractForm.workEndTime?.split(':')[1] || '00';
-                        setContractForm({ workEndTime: `${e.target.value}:${minutes}` });
-                      }}
-                    >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i.toString().padStart(2, '0')}>
-                          {i.toString().padStart(2, '0')}시
-                        </option>
-                      ))}
-                    </select>
-                    <span className="text-muted-foreground text-xl">:</span>
-                    <select
-                      className="flex-1 h-14 px-4 rounded-2xl border-2 border-border bg-background text-body-lg font-semibold text-center focus:border-primary focus:outline-none transition-colors appearance-none cursor-pointer"
-                      value={contractForm.workEndTime?.split(':')[1] || '00'}
-                      onChange={(e) => {
-                        const hours = contractForm.workEndTime?.split(':')[0] || '18';
-                        setContractForm({ workEndTime: `${hours}:${e.target.value}` });
-                      }}
-                    >
-                      {['00', '10', '20', '30', '40', '50'].map((min) => (
-                        <option key={min} value={min}>
-                          {min}분
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* 근무 시간 요약 */}
-                {contractForm.workStartTime && contractForm.workEndTime && (
-                  <motion.div
-                    className="p-4 rounded-2xl bg-primary/5 border border-primary/20"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <p className="text-body text-primary font-medium text-center">
-                      {contractForm.workStartTime} ~ {contractForm.workEndTime} 근무
-                    </p>
-                  </motion.div>
-                )}
-              </div>
-            </StepContainer>
-          )}
-
-          {currentStep === 6 && (
-            <StepContainer key="step-6" stepKey={6}>
-              <StepQuestion
-                question="휴게시간을 알려주세요"
-                description="4시간 근무 시 30분, 8시간 근무 시 1시간 이상 휴게시간이 필요해요"
-                className="mb-8"
-              />
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  {BREAK_TIME_OPTIONS.map((minutes) => (
-                    <motion.button
-                      key={minutes}
-                      className={`h-16 rounded-2xl text-body font-semibold transition-all flex flex-col items-center justify-center gap-1 ${
-                        contractForm.breakTimeMinutes === minutes
-                          ? 'bg-primary text-primary-foreground shadow-button'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                      }`}
-                      onClick={() => setContractForm({ breakTimeMinutes: minutes })}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Coffee className={`w-5 h-5 ${contractForm.breakTimeMinutes === minutes ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
-                      <span>{minutes === 0 ? '없음' : `${minutes}분`}</span>
-                    </motion.button>
-                  ))}
-                </div>
-
-                {/* 휴게시간 안내 */}
-                {contractForm.breakTimeMinutes !== undefined && (
-                  <motion.div
-                    className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <p className="text-caption text-amber-700 dark:text-amber-300">
-                      <Info className="w-4 h-4 inline mr-1" />
-                      {contractForm.breakTimeMinutes === 0 
-                        ? '4시간 이상 근무 시 30분 이상 휴게시간이 법적으로 필요해요'
-                        : `${contractForm.breakTimeMinutes}분 휴게시간이 설정되었어요`}
-                    </p>
-                  </motion.div>
-                )}
-              </div>
-            </StepContainer>
-          )}
-
-          {currentStep === 7 && (
-            <StepContainer key="step-7" stepKey={7}>
-              <StepQuestion
-                question="근무 장소는 어디인가요?"
-                className="mb-8"
-              />
-              <Input
-                variant="toss"
-                inputSize="xl"
-                placeholder="예: 서울시 강남구 테헤란로 123"
-                value={contractForm.workLocation || ''}
-                onChange={(e) => setContractForm({ workLocation: e.target.value })}
-                autoFocus
-              />
-            </StepContainer>
-          )}
-
+          {/* Step 8: 근무 장소 */}
           {currentStep === 8 && (
             <StepContainer key="step-8" stepKey={8}>
-              <StepQuestion
-                question="임금은 언제 지급하나요?"
-                className="mb-8"
-              />
+              <StepQuestion question="근무 장소는 어디인가요?" className="mb-8" />
+              <Input variant="toss" inputSize="xl" placeholder="예: 서울시 강남구 테헤란로 123" value={contractForm.workLocation || ''} onChange={(e) => setContractForm({ workLocation: e.target.value })} autoFocus />
+            </StepContainer>
+          )}
+
+          {/* Step 9: 임금 지급일 */}
+          {currentStep === 9 && (
+            <StepContainer key="step-9" stepKey={9}>
+              <StepQuestion question="임금은 언제 지급하나요?" className="mb-8" />
               <div className="space-y-6">
-                {/* 당월/익월 선택 */}
-                <div>
-                  <p className="text-body font-medium text-foreground mb-3">지급 기준</p>
-                  <div className="flex gap-3">
-                    <motion.button
-                      className={`flex-1 h-14 rounded-2xl text-body font-semibold transition-all ${
-                        contractForm.paymentMonth === 'current'
-                          ? 'bg-primary text-primary-foreground shadow-button'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                      }`}
-                      onClick={() => setContractForm({ paymentMonth: 'current' })}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      당월 지급
-                    </motion.button>
-                    <motion.button
-                      className={`flex-1 h-14 rounded-2xl text-body font-semibold transition-all ${
-                        contractForm.paymentMonth === 'next'
-                          ? 'bg-primary text-primary-foreground shadow-button'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                      }`}
-                      onClick={() => setContractForm({ paymentMonth: 'next' })}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      익월 지급
-                    </motion.button>
-                  </div>
+                <div className="flex gap-3">
+                  <motion.button className={`flex-1 h-14 rounded-2xl text-body font-semibold transition-all ${contractForm.paymentMonth === 'current' ? 'bg-primary text-primary-foreground shadow-button' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => setContractForm({ paymentMonth: 'current' })} whileTap={{ scale: 0.98 }}>당월 지급</motion.button>
+                  <motion.button className={`flex-1 h-14 rounded-2xl text-body font-semibold transition-all ${contractForm.paymentMonth === 'next' ? 'bg-primary text-primary-foreground shadow-button' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => setContractForm({ paymentMonth: 'next' })} whileTap={{ scale: 0.98 }}>익월 지급</motion.button>
                 </div>
-
-                {/* 말일지급 체크박스 */}
                 <div className="flex items-center gap-3 py-2">
-                  <Checkbox
-                    id="paymentEndOfMonth"
-                    checked={contractForm.paymentEndOfMonth || false}
-                    onCheckedChange={(checked) => 
-                      setContractForm({ 
-                        paymentEndOfMonth: checked === true,
-                        paymentDay: checked === true ? undefined : contractForm.paymentDay 
-                      })
-                    }
-                  />
-                  <label 
-                    htmlFor="paymentEndOfMonth" 
-                    className="text-body font-medium text-foreground cursor-pointer"
-                  >
-                    말일 지급
-                  </label>
+                  <Checkbox id="paymentEndOfMonth" checked={contractForm.paymentEndOfMonth || false} onCheckedChange={(checked) => setContractForm({ paymentEndOfMonth: checked === true, paymentDay: checked === true ? undefined : contractForm.paymentDay })} />
+                  <label htmlFor="paymentEndOfMonth" className="text-body font-medium text-foreground cursor-pointer">말일 지급</label>
                 </div>
-
-                {/* 지급일 선택 (말일 지급이 아닐 때만) */}
                 {!contractForm.paymentEndOfMonth && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    <p className="text-body font-medium text-foreground mb-3">지급일</p>
-                    <div className="grid grid-cols-7 gap-2">
-                      {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                        <motion.button
-                          key={day}
-                          className={`h-11 rounded-xl text-caption font-medium transition-all ${
-                            contractForm.paymentDay === day
-                              ? 'bg-primary text-primary-foreground shadow-button'
-                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                          }`}
-                          onClick={() => setContractForm({ paymentDay: day })}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {day}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* 지급일 요약 */}
-                {contractForm.paymentMonth && (contractForm.paymentEndOfMonth || contractForm.paymentDay) && (
-                  <motion.div
-                    className="p-4 rounded-2xl bg-primary/5 border border-primary/20"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <p className="text-body text-primary font-medium text-center">
-                      {contractForm.paymentMonth === 'current' ? '당월' : '익월'}{' '}
-                      {contractForm.paymentEndOfMonth ? '말일' : `${contractForm.paymentDay}일`} 지급
-                    </p>
-                  </motion.div>
+                  <div className="grid grid-cols-7 gap-2">
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                      <motion.button key={day} className={`h-11 rounded-xl text-caption font-medium transition-all ${contractForm.paymentDay === day ? 'bg-primary text-primary-foreground shadow-button' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => setContractForm({ paymentDay: day })} whileTap={{ scale: 0.95 }}>{day}</motion.button>
+                    ))}
+                  </div>
                 )}
               </div>
             </StepContainer>
           )}
 
-          {currentStep === 9 && (
-            <StepContainer key="step-9" stepKey={9}>
-              <StepQuestion
-                question="주요 업무 내용을 알려주세요"
-                description="선택사항이에요"
-                className="mb-6"
-              />
-              
-              {/* 키워드 선택 */}
-              <div className="mb-6">
-                <p className="text-caption text-muted-foreground mb-3">자주 쓰는 업무를 선택하세요</p>
-                <div className="flex flex-wrap gap-2">
-                  {JOB_KEYWORDS.map((keyword) => {
-                    const isSelected = contractForm.jobDescription?.includes(keyword);
-                    return (
-                      <motion.button
-                        key={keyword}
-                        className={`px-4 py-2 rounded-full text-caption font-medium transition-all ${
-                          isSelected
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                        }`}
-                        onClick={() => {
-                          const current = contractForm.jobDescription || '';
-                          if (isSelected) {
-                            // 키워드 제거
-                            const updated = current
-                              .split(', ')
-                              .filter(k => k !== keyword)
-                              .join(', ');
-                            setContractForm({ jobDescription: updated });
-                          } else {
-                            // 키워드 추가
-                            const updated = current ? `${current}, ${keyword}` : keyword;
-                            setContractForm({ jobDescription: updated });
-                          }
-                        }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {keyword}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 직접 입력 */}
-              <div>
-                <p className="text-caption text-muted-foreground mb-2">직접 입력하기</p>
-                <textarea
-                  className="w-full h-24 p-4 rounded-2xl border-2 border-border bg-background text-body focus:border-primary focus:outline-none transition-colors resize-none"
-                  placeholder="추가로 입력하고 싶은 업무 내용을 적어주세요"
-                  value={contractForm.jobDescription || ''}
-                  onChange={(e) => setContractForm({ jobDescription: e.target.value })}
-                />
-              </div>
-
-              {/* 선택된 업무 요약 */}
-              {contractForm.jobDescription && (
-                <motion.div
-                  className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/20"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <p className="text-caption text-muted-foreground mb-1">선택된 업무</p>
-                  <p className="text-body text-primary font-medium">
-                    {contractForm.jobDescription}
-                  </p>
-                </motion.div>
+          {/* Step 10: 포괄임금 수당 (5인 이상) 또는 업무 내용 (5인 미만) */}
+          {currentStep === 10 && (
+            <StepContainer key="step-10" stepKey={10}>
+              {contractForm.businessSize === 'over5' ? (
+                <>
+                  <StepQuestion question="포괄임금 수당 항목을 입력해주세요" description="5인 이상 사업장은 각 수당 금액을 명시해야 법적 효력이 있어요" className="mb-6" />
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-caption text-muted-foreground mb-2">연장근로수당 (월 예상)</p>
+                      <div className="relative">
+                        <Input variant="toss" inputSize="lg" type="number" placeholder="0" value={contractForm.comprehensiveWageDetails?.overtimeAllowance || ''} onChange={(e) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, overtimeAllowance: Number(e.target.value) || undefined } })} className="pr-12" />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body">원</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-caption text-muted-foreground mb-2">휴일근로수당 (월 예상)</p>
+                      <div className="relative">
+                        <Input variant="toss" inputSize="lg" type="number" placeholder="0" value={contractForm.comprehensiveWageDetails?.holidayAllowance || ''} onChange={(e) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, holidayAllowance: Number(e.target.value) || undefined } })} className="pr-12" />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body">원</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-caption text-muted-foreground mb-2">연차유급휴가 수당 (연간)</p>
+                      <div className="relative">
+                        <Input variant="toss" inputSize="lg" type="number" placeholder="0" value={contractForm.comprehensiveWageDetails?.annualLeaveAllowance || ''} onChange={(e) => setContractForm({ comprehensiveWageDetails: { ...contractForm.comprehensiveWageDetails, annualLeaveAllowance: Number(e.target.value) || undefined } })} className="pr-12" />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground text-body">원</span>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                      <p className="text-caption text-blue-700 dark:text-blue-300"><Info className="w-4 h-4 inline mr-1" />포괄임금 계약의 법적 효력을 위해 최소 1개 이상의 수당 항목을 입력해주세요.</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <StepQuestion question="주요 업무 내용을 알려주세요" description="선택사항이에요" className="mb-6" />
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {JOB_KEYWORDS.map((keyword) => {
+                      const isSelected = contractForm.jobDescription?.includes(keyword);
+                      return (
+                        <motion.button key={keyword} className={`px-4 py-2 rounded-full text-caption font-medium transition-all ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => { const current = contractForm.jobDescription || ''; const updated = isSelected ? current.split(', ').filter(k => k !== keyword).join(', ') : current ? `${current}, ${keyword}` : keyword; setContractForm({ jobDescription: updated }); }} whileTap={{ scale: 0.95 }}>{keyword}</motion.button>
+                      );
+                    })}
+                  </div>
+                  <textarea className="w-full h-24 p-4 rounded-2xl border-2 border-border bg-background text-body focus:border-primary focus:outline-none transition-colors resize-none" placeholder="추가로 입력하고 싶은 업무 내용을 적어주세요" value={contractForm.jobDescription || ''} onChange={(e) => setContractForm({ jobDescription: e.target.value })} />
+                </>
               )}
             </StepContainer>
           )}
-        </AnimatePresence>
       </div>
 
       {/* Bottom Button */}
