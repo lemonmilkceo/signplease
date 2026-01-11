@@ -657,7 +657,10 @@ export default function CreateContract() {
           {currentStep === 8 && (
             <StepContainer key="step-8" stepKey={8}>
               <StepQuestion question="근무 장소는 어디인가요?" className="mb-8" />
-              <Input variant="toss" inputSize="xl" placeholder="예: 서울시 강남구 테헤란로 123" value={contractForm.workLocation || ''} onChange={(e) => setContractForm({ workLocation: e.target.value })} autoFocus />
+              <div className="space-y-4">
+                <Input variant="toss" inputSize="xl" placeholder="예: 서울시 강남구 테헤란로 123" value={contractForm.workLocation || ''} onChange={(e) => setContractForm({ workLocation: e.target.value })} autoFocus />
+                <Input variant="toss" inputSize="xl" placeholder="사업장명 (예: 카페 베이직)" value={contractForm.businessName || ''} onChange={(e) => setContractForm({ businessName: e.target.value })} />
+              </div>
             </StepContainer>
           )}
 
