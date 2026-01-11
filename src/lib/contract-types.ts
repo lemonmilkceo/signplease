@@ -25,6 +25,7 @@ export interface ContractData {
   workEndTime: string;
   breakTimeMinutes?: number; // 휴게시간 (분 단위)
   workLocation: string;
+  businessName?: string; // 사업장명
   paymentDay?: number;
   paymentMonth?: 'current' | 'next';
   paymentEndOfMonth?: boolean;
