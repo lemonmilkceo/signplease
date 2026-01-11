@@ -139,12 +139,17 @@ export default function WorkerContractView() {
     setSigning(true);
     try {
       await signContractAsWorker(contract.id, signatureData);
-      toast.success("계약이 완료되었습니다!");
-      navigate('/worker');
+      setIsSignatureOpen(false);
+      toast.success("계약이 완료되었습니다! 🎉", {
+        description: "잠시 후 대시보드로 이동합니다.",
+        duration: 2000,
+      });
+      setTimeout(() => {
+        navigate('/worker');
+      }, 2000);
     } catch (error) {
       console.error('Error signing contract:', error);
       toast.error('서명에 실패했습니다');
-    } finally {
       setSigning(false);
       setIsSignatureOpen(false);
     }
