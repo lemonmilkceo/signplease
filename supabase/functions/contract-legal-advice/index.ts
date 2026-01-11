@@ -59,10 +59,11 @@ serve(async (req) => {
     if (contractData.businessSize === 'over5' && contractData.comprehensiveWageDetails) {
       const details = contractData.comprehensiveWageDetails;
       const items = [];
-      if (details.overtimeAllowance) items.push(`연장근로수당: 월 ${details.overtimeAllowance.toLocaleString()}원`);
-      if (details.holidayAllowance) items.push(`휴일근로수당: 월 ${details.holidayAllowance.toLocaleString()}원`);
-      if (details.annualLeaveAllowance) items.push(`연차유급휴가수당: 연 ${details.annualLeaveAllowance.toLocaleString()}원`);
-      wageDetailsText = items.length > 0 ? `수당 세부: ${items.join(', ')}` : '수당 세부: 미기재';
+      // 단위당 금액 필드 사용
+      if (details.overtimePerHour) items.push(`연장근로수당: 시간당 ${details.overtimePerHour.toLocaleString()}원`);
+      if (details.holidayPerDay) items.push(`휴일근로수당: 일당 ${details.holidayPerDay.toLocaleString()}원`);
+      if (details.annualLeavePerDay) items.push(`연차유급휴가수당: 일당 ${details.annualLeavePerDay.toLocaleString()}원`);
+      wageDetailsText = items.length > 0 ? `포괄임금 수당 명시: ${items.join(', ')}` : '수당 세부: 미기재';
     }
 
     const contractSummary = `사업장: ${businessSizeText}, 시급: ${contractData.hourlyWage?.toLocaleString()}원 ${contractData.includeWeeklyHolidayPay ? '(주휴수당 포함)' : ''}, 근무: ${contractData.workStartTime}~${contractData.workEndTime}, 휴게: ${contractData.breakTimeMinutes ? `${contractData.breakTimeMinutes}분` : '미기재'}, 주${contractData.workDaysPerWeek || '?'}일, 포괄임금: ${contractData.isComprehensiveWage ? '예' : '아니오'}${wageDetailsText ? `, ${wageDetailsText}` : ''}${wageBreakdownText ? `, ${wageBreakdownText}` : ''}`;
