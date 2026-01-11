@@ -620,21 +620,21 @@ export default function ContractPreview() {
             </div>
           </div>
 
-          {/* AI Legal Advice Section */}
+          {/* Contract Verification Section */}
           <div className="px-6 pb-6 space-y-3">
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-200 dark:border-violet-800">
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                <p className="text-caption font-medium text-violet-700 dark:text-violet-300">
-                  AI가 생성한 계약서입니다
+                <FileCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <p className="text-caption font-medium text-blue-700 dark:text-blue-300">
+                  근로기준법 기반 표준계약서
                 </p>
               </div>
-              <p className="text-caption text-violet-600/80 dark:text-violet-400/80">
-                아래 버튼을 눌러 법적 검토를 받아보세요.
+              <p className="text-caption text-blue-600/80 dark:text-blue-400/80">
+                서명 전 계약서 검토를 권장드립니다.
               </p>
             </div>
 
-            {/* AI Legal Advice Button */}
+            {/* Contract Review Button */}
             <motion.button
               onClick={handleGetLegalAdvice}
               className="w-full p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 flex items-center gap-3 hover:shadow-md transition-all"
@@ -645,13 +645,13 @@ export default function ContractPreview() {
               </div>
               <div className="flex-1 text-left">
                 <p className="text-body font-medium text-emerald-700 dark:text-emerald-300">
-                  AI 법적 조언 받기
+                  무료 계약서 검토받기
                 </p>
                 <p className="text-caption text-emerald-600/70 dark:text-emerald-400/70">
-                  계약서의 법적 적합성을 분석해드려요
+                  근로기준법 준수 여부를 확인해드려요
                 </p>
               </div>
-              <Sparkles className="w-5 h-5 text-emerald-500" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
             </motion.button>
           </div>
         </motion.div>
@@ -785,8 +785,8 @@ export default function ContractPreview() {
                     <Scale className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="text-body-lg font-semibold text-foreground">AI 법적 조언</h3>
-                    <p className="text-caption text-muted-foreground">계약서 분석 결과</p>
+                    <h3 className="text-body-lg font-semibold text-foreground">계약서 검토 결과</h3>
+                    <p className="text-caption text-muted-foreground">근로기준법 준수 여부 분석</p>
                   </div>
                 </div>
                 <button
