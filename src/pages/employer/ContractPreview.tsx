@@ -371,9 +371,20 @@ export default function ContractPreview() {
               <div className="flex-1">
                 <p className="text-caption text-muted-foreground mb-1">임금</p>
                 <p className="text-body-lg font-semibold text-foreground">
-                  시급 {contract.hourly_wage.toLocaleString()}원
-                  {contractForm.includeWeeklyHolidayPay && (
-                    <span className="text-caption text-muted-foreground ml-1">(주휴수당 포함)</span>
+                  {contractForm.wageType === 'monthly' && contractForm.monthlyWage ? (
+                    <>
+                      월급 {contractForm.monthlyWage.toLocaleString()}원
+                      {contractForm.includeWeeklyHolidayPay && (
+                        <span className="text-caption text-muted-foreground ml-1">(주휴수당 포함)</span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      시급 {contract.hourly_wage.toLocaleString()}원
+                      {contractForm.includeWeeklyHolidayPay && (
+                        <span className="text-caption text-muted-foreground ml-1">(주휴수당 포함)</span>
+                      )}
+                    </>
                   )}
                 </p>
                 
