@@ -153,13 +153,13 @@ const menuItems = userType === 'employer'
           <Menu className="w-5 h-5" />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[300px] sm:w-[340px] p-0">
-        <SheetHeader className="p-6 pb-4">
+      <SheetContent side="left" className="w-[300px] sm:w-[340px] p-0 flex flex-col h-full">
+        <SheetHeader className="p-6 pb-4 flex-shrink-0">
           <SheetTitle className="text-left">메뉴</SheetTitle>
         </SheetHeader>
 
         {/* User Info Section */}
-        <div className="px-6 pb-4">
+        <div className="px-6 pb-4 flex-shrink-0">
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/50">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="w-6 h-6 text-primary" />
@@ -182,10 +182,10 @@ const menuItems = userType === 'employer'
           </div>
         </div>
 
-        <Separator />
+        <Separator className="flex-shrink-0" />
 
-        {/* Menu Items */}
-        <div className="py-2 flex-1 overflow-auto">
+        {/* Menu Items - Scrollable */}
+        <div className="flex-1 overflow-y-auto py-2">
           {menuItems.map((item, index) => (
             <motion.button
               key={index}
@@ -213,8 +213,8 @@ const menuItems = userType === 'employer'
           ))}
         </div>
 
-        {/* Version */}
-        <div className="p-6 pt-2">
+        {/* Version - Fixed at bottom */}
+        <div className="p-4 border-t border-border flex-shrink-0">
           <p className="text-xs text-muted-foreground text-center">
             싸인해주세요 v1.0.0
           </p>

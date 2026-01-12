@@ -444,7 +444,7 @@ export default function EmployerDashboard() {
                 <span className="text-sm">전체 계약서</span>
               </button>
             ) : (
-              <p className="text-body text-muted-foreground mb-1">안녕하세요,</p>
+              <p className="text-body text-muted-foreground mb-1">환영합니다</p>
             )}
             <h1 className="text-title text-foreground flex items-center gap-2">
               {currentFolderId ? (
@@ -453,7 +453,7 @@ export default function EmployerDashboard() {
                   {currentFolder?.name}
                 </>
               ) : (
-                <>{displayName || '사장님'} 👋</>
+                <>{displayName || '고객'}님 👋</>
               )}
             </h1>
           </motion.div>
