@@ -66,9 +66,9 @@ export default function WorkerContractView() {
     const dailyWorkHours = parseWorkTime(
       contract.work_start_time,
       contract.work_end_time,
-      0 // 휴게시간 정보가 없으면 0
+      contract.break_time_minutes ?? 0
     );
-    const workDaysPerWeek = contract.work_days?.length || 5;
+    const workDaysPerWeek = contract.work_days_per_week ?? contract.work_days?.length ?? 5;
     
     return calculateMonthlyWageBreakdown(
       contract.hourly_wage,
@@ -76,6 +76,17 @@ export default function WorkerContractView() {
       dailyWorkHours
     );
   }, [contract]);
+
+  // 근무일 포맷팅
+  const formatWorkDays = () => {
+    if (contract?.work_days_per_week) {
+      return `주 ${contract.work_days_per_week}일`;
+    }
+    if (contract?.work_days && contract.work_days.length > 0) {
+      return contract.work_days.join(', ');
+    }
+    return '협의 필요';
+  };
 
   const handleDownloadPDF = async () => {
     if (!contract) return;
@@ -291,7 +302,7 @@ export default function WorkerContractView() {
                   {contract.work_start_time} ~ {contract.work_end_time}
                 </p>
                 <p className="text-caption text-muted-foreground mt-0.5">
-                  매주 {contract.work_days.join(', ')}
+                  {formatWorkDays()}
                 </p>
               </div>
             </div>
