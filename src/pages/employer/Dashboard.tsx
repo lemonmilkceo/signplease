@@ -1239,7 +1239,7 @@ export default function EmployerDashboard() {
           <AlertDialogHeader>
             <AlertDialogTitle>계약서 삭제</AlertDialogTitle>
             <AlertDialogDescription>
-              선택한 {selectedIds.size}개의 계약서를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+              선택한 {selectedIds.size}개의 계약서를 휴지통으로 이동하시겠습니까?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
