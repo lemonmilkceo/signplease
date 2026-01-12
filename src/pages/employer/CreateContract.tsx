@@ -2,16 +2,16 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppStore } from "@/lib/store";
 import { ProgressSteps } from "@/components/ui/progress-steps";
 import { StepContainer, StepQuestion } from "@/components/ui/step-container";
-import { AIGenerating } from "@/components/ui/loading";
+import { AIGenerating, LoadingSpinner } from "@/components/ui/loading";
 import { ArrowLeft, Calendar, Clock, Wallet, Banknote, Info, Sparkles, Coffee, Building2, Users, Search } from "lucide-react";
 import { WORK_DAYS_PER_WEEK, MINIMUM_WAGE_2026, MINIMUM_WAGE_WITH_HOLIDAY_2026, JOB_KEYWORDS, WageType, BusinessSize } from "@/lib/contract-types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { generateContractContent, createContract, ContractInput } from "@/lib/contract-api";
+import { generateContractContent, createContract, getContract, updateContract as updateContractApi, ContractInput, Contract } from "@/lib/contract-api";
 import { toast } from "sonner";
 import { AllowanceCalculator } from "@/components/allowance-calculator";
 import { parseWorkTime } from "@/lib/wage-utils";
@@ -24,13 +24,79 @@ const BREAK_TIME_OPTIONS = [0, 30, 60, 90, 120];
 
 export default function CreateContract() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editContractId = searchParams.get('edit');
+  
   const { user, profile, isLoading: authLoading } = useAuth();
-  const { isDemo, contractForm, setContractForm, addContract } = useAppStore();
+  const { isDemo, contractForm, setContractForm, addContract, updateContract: updateDemoContract, contracts: demoContracts, editingContractId, setEditingContractId, resetContractForm } = useAppStore();
   const { openAddressSearch, isScriptLoaded } = useKakaoAddress();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingContract, setIsLoadingContract] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
   const [remainingCredits, setRemainingCredits] = useState<number>(5);
+  const [originalContract, setOriginalContract] = useState<Contract | null>(null);
+
+  // Load existing contract for editing
+  useEffect(() => {
+    const loadContractForEdit = async () => {
+      if (!editContractId) {
+        setEditingContractId(null);
+        return;
+      }
+      
+      setIsLoadingContract(true);
+      setEditingContractId(editContractId);
+      
+      try {
+        if (isDemo) {
+          // Demo mode - find from local state
+          const demoContract = demoContracts.find(c => c.id === editContractId);
+          if (demoContract) {
+            setContractForm({
+              workerName: demoContract.workerName,
+              hourlyWage: demoContract.hourlyWage,
+              startDate: demoContract.startDate,
+              workDays: demoContract.workDays,
+              workStartTime: demoContract.workStartTime,
+              workEndTime: demoContract.workEndTime,
+              workLocation: demoContract.workLocation,
+              businessName: demoContract.businessName,
+              jobDescription: demoContract.jobDescription,
+              wageType: demoContract.wageType || 'hourly',
+              monthlyWage: demoContract.monthlyWage,
+            });
+          }
+        } else {
+          // Real mode - fetch from database
+          const contract = await getContract(editContractId);
+          if (contract) {
+            setOriginalContract(contract);
+            setContractForm({
+              workerName: contract.worker_name,
+              hourlyWage: contract.hourly_wage,
+              startDate: contract.start_date,
+              workDays: contract.work_days,
+              workStartTime: contract.work_start_time,
+              workEndTime: contract.work_end_time,
+              workLocation: contract.work_location,
+              businessName: contract.business_name || undefined,
+              jobDescription: contract.job_description || undefined,
+              wageType: 'hourly',
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading contract for edit:", error);
+        toast.error("계약서를 불러오는데 실패했습니다.");
+        navigate('/employer');
+      } finally {
+        setIsLoadingContract(false);
+      }
+    };
+    
+    loadContractForEdit();
+  }, [editContractId, isDemo]);
 
   // Fetch remaining credits on mount
   useEffect(() => {
@@ -91,8 +157,10 @@ export default function CreateContract() {
   };
 
   const handleGenerateContract = async () => {
-    // Check credits before generating (skip in demo mode)
-    if (!isDemo && user) {
+    const isEditing = !!editingContractId;
+    
+    // Check credits before generating (skip in demo mode and when editing)
+    if (!isDemo && user && !isEditing) {
       try {
         const credits = await getRemainingCredits(user.id);
         setRemainingCredits(credits);
@@ -124,41 +192,77 @@ export default function CreateContract() {
     try {
       if (isDemo) {
         // Demo mode - simulate AI generation
-        await new Promise((resolve) => setTimeout(resolve, 2500));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         
-        const mockContract = {
-          id: Date.now().toString(),
-          ...contractData,
-          wageType: contractForm.wageType || 'hourly',
-          monthlyWage: contractForm.monthlyWage,
-          status: 'draft' as const,
-          createdAt: new Date().toISOString().split('T')[0],
-        };
-
-        addContract(mockContract);
-        navigate(`/employer/preview/${mockContract.id}`);
-      } else if (user) {
-        // Use credit before generating
-        const creditUsed = await useCredit(user.id);
-        if (!creditUsed) {
-          setShowNoCreditModal(true);
-          setIsGenerating(false);
-          return;
+        if (isEditing) {
+          // Update existing demo contract
+          updateDemoContract(editingContractId, {
+            ...contractData,
+            wageType: contractForm.wageType || 'hourly',
+            monthlyWage: contractForm.monthlyWage,
+          });
+          toast.success("계약서가 수정되었습니다!");
+          navigate(`/employer/contract/${editingContractId}`);
+        } else {
+          // Create new demo contract
+          const mockContract = {
+            id: Date.now().toString(),
+            ...contractData,
+            wageType: contractForm.wageType || 'hourly',
+            monthlyWage: contractForm.monthlyWage,
+            status: 'draft' as const,
+            createdAt: new Date().toISOString().split('T')[0],
+          };
+          addContract(mockContract);
+          navigate(`/employer/preview/${mockContract.id}`);
         }
+        
+        // Reset form and editing state
+        resetContractForm();
+        setEditingContractId(null);
+      } else if (user) {
+        if (isEditing && originalContract) {
+          // Update existing contract
+          const contractContent = await generateContractContent(contractData);
+          await updateContractApi(editingContractId, {
+            worker_name: contractData.workerName,
+            hourly_wage: contractData.hourlyWage,
+            start_date: contractData.startDate,
+            work_days: contractData.workDays,
+            work_start_time: contractData.workStartTime,
+            work_end_time: contractData.workEndTime,
+            work_location: contractData.workLocation,
+            business_name: contractData.businessName || null,
+            job_description: contractData.jobDescription || null,
+            contract_content: contractContent,
+          });
+          
+          toast.success("계약서가 수정되었습니다!");
+          resetContractForm();
+          setEditingContractId(null);
+          navigate(`/employer/contract/${editingContractId}`);
+        } else {
+          // Create new contract
+          const creditUsed = await useCredit(user.id);
+          if (!creditUsed) {
+            setShowNoCreditModal(true);
+            setIsGenerating(false);
+            return;
+          }
 
-        // Real mode - use AI and database
-        const contractContent = await generateContractContent(contractData);
-        const newContract = await createContract(contractData, contractContent, user.id);
-        
-        // Update remaining credits
-        const newCredits = await getRemainingCredits(user.id);
-        setRemainingCredits(newCredits);
-        
-        navigate(`/employer/preview/${newContract.id}`);
+          const contractContent = await generateContractContent(contractData);
+          const newContract = await createContract(contractData, contractContent, user.id);
+          
+          const newCredits = await getRemainingCredits(user.id);
+          setRemainingCredits(newCredits);
+          
+          resetContractForm();
+          navigate(`/employer/preview/${newContract.id}`);
+        }
       }
     } catch (error) {
       console.error("Contract generation error:", error);
-      toast.error("계약서 생성에 실패했습니다. 다시 시도해주세요.");
+      toast.error(isEditing ? "계약서 수정에 실패했습니다." : "계약서 생성에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsGenerating(false);
     }
@@ -217,6 +321,14 @@ export default function CreateContract() {
     setContractForm({ workDays: newDays });
   };
 
+  if (isLoadingContract) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <LoadingSpinner text="계약서를 불러오는 중..." />
+      </div>
+    );
+  }
+
   if (isGenerating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
@@ -225,10 +337,23 @@ export default function CreateContract() {
     );
   }
 
+  const isEditing = !!editingContractId;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="px-6 pt-6 pb-4">
+        {isEditing && (
+          <motion.div 
+            className="mb-3 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <p className="text-sm text-primary font-medium text-center">
+              📝 계약서 수정 모드
+            </p>
+          </motion.div>
+        )}
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={handleBack}
@@ -905,7 +1030,7 @@ export default function CreateContract() {
             className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-semibold shadow-lg shadow-purple-500/30 transition-all duration-300"
           >
             <Sparkles className="w-5 h-5 mr-2" />
-            AI로 계약서 생성하기
+            {isEditing ? '계약서 수정 완료' : 'AI로 계약서 생성하기'}
           </Button>
         ) : (
           <Button

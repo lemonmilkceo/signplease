@@ -12,6 +12,10 @@ interface AppState {
   contractForm: Partial<ContractData>;
   setContractForm: (data: Partial<ContractData>) => void;
   resetContractForm: () => void;
+  
+  // Editing contract
+  editingContractId: string | null;
+  setEditingContractId: (id: string | null) => void;
 
   // Contracts List
   contracts: ContractData[];
@@ -36,6 +40,10 @@ export const useAppStore = create<AppState>((set) => ({
     contractForm: { ...state.contractForm, ...data }
   })),
   resetContractForm: () => set({ contractForm: {} }),
+  
+  // Editing contract
+  editingContractId: null,
+  setEditingContractId: (id) => set({ editingContractId: id }),
 
   // Contracts List
   contracts: MOCK_CONTRACTS,
