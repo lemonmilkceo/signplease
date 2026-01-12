@@ -42,7 +42,7 @@ export default function Onboarding() {
     {
       icon: <Shield className="w-5 h-5" />,
       title: "최신 법률 자동 반영",
-      description: "2024년 근로기준법 준수",
+      description: "2026년 근로기준법 준수",
     },
     {
       icon: <Lock className="w-5 h-5" />,
@@ -78,21 +78,6 @@ export default function Onboarding() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col px-6 pt-12 pb-6 relative z-10">
-        {/* Trust Badge */}
-        <motion.div
-          className="flex justify-center mb-8"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full">
-            <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-medium text-green-700">
-              공인 전자문서 서비스
-            </span>
-          </div>
-        </motion.div>
-
         {/* Stats Section */}
         <motion.div
           className="grid grid-cols-3 gap-2 mb-10"
