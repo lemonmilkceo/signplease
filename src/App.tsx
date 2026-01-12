@@ -8,6 +8,7 @@ import { SupportChat } from "@/components/SupportChat";
 import NotFound from "./pages/NotFound";
 
 // Pages
+import Splash from "./pages/Splash";
 import Onboarding from "./pages/Onboarding";
 import SelectRole from "./pages/SelectRole";
 import EmployerDashboard from "./pages/employer/Dashboard";
@@ -33,7 +34,8 @@ const App = () => (
         <BrowserRouter>
           <div className="max-w-md mx-auto min-h-screen bg-background">
             <Routes>
-              <Route path="/" element={<Onboarding />} />
+              <Route path="/" element={<Splash />} />
+              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/select-role" element={<SelectRole />} />
               
 {/* Employer Routes */}
