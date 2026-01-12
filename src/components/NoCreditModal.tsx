@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,15 +17,16 @@ interface NoCreditModalProps {
   remainingCredits: number;
 }
 
-export function NoCreditModal({ open, onOpenChange, remainingCredits }: NoCreditModalProps) {
-  const navigate = useNavigate();
+export const NoCreditModal = forwardRef<HTMLDivElement, NoCreditModalProps>(
+  function NoCreditModal({ open, onOpenChange, remainingCredits }, ref) {
+    const navigate = useNavigate();
 
-  const handleGoToPricing = () => {
-    onOpenChange(false);
-    navigate('/pricing');
-  };
+    const handleGoToPricing = () => {
+      onOpenChange(false);
+      navigate('/pricing');
+    };
 
-  return (
+    return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-auto">
         <DialogHeader className="text-center pb-2">
@@ -95,4 +97,6 @@ export function NoCreditModal({ open, onOpenChange, remainingCredits }: NoCredit
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+NoCreditModal.displayName = "NoCreditModal";

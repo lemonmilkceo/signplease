@@ -65,7 +65,7 @@ export function ShareContractModal({
         .from("profiles")
         .select("user_id")
         .eq("phone", cleanPhone)
-        .single();
+        .maybeSingle();
 
       // Create invitation record
       const { error: inviteError } = await supabase
