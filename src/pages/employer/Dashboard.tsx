@@ -396,7 +396,7 @@ export default function EmployerDashboard() {
             </h1>
           </motion.div>
 
-          {!isDemo && user && !isSelectionMode && (
+          {!isDemo && user && (
             <AppDrawer userType="employer" />
           )}
         </div>
