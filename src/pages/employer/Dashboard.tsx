@@ -542,29 +542,29 @@ export default function EmployerDashboard() {
             새 계약서 작성
           </Button>
           {!isDemo && (
-            <>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigate('/employer/chat')}
-                className="flex-shrink-0"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  setEditingFolder(null);
-                  setNewFolderName('');
-                  setNewFolderColor('gray');
-                  setShowFolderDialog(true);
-                }}
-                className="flex-shrink-0"
-              >
-                <FolderPlus className="w-5 h-5" />
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate('/employer/chat')}
+              className="flex-shrink-0"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </Button>
+          )}
+          {!isDemo && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setEditingFolder(null);
+                setNewFolderName('');
+                setNewFolderColor('gray');
+                setShowFolderDialog(true);
+              }}
+              className="flex-shrink-0"
+            >
+              <FolderPlus className="w-5 h-5" />
+            </Button>
           )}
         </motion.div>
       </div>
