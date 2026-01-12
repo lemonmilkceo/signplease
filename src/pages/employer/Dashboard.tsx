@@ -360,77 +360,82 @@ export default function EmployerDashboard() {
           }}
           className="p-4"
         >
-          <div className="flex items-start gap-4">
+          <div className="flex items-center gap-3">
+            {/* Selection checkbox */}
             {isSelectionMode && (
-              <div className="flex items-center pt-2" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
                 <Checkbox
                   checked={selectedIds.has(contract.id)}
                   onCheckedChange={() => toggleSelection(contract.id)}
                 />
               </div>
             )}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+            
+            {/* Icon */}
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
               isPending ? 'bg-warning/10' : 'bg-success/10'
             }`}>
-              <FileText className={`w-6 h-6 ${isPending ? 'text-warning' : 'text-success'}`} />
+              <FileText className={`w-5 h-5 ${isPending ? 'text-warning' : 'text-success'}`} />
             </div>
+            
+            {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <p className="text-body font-semibold text-foreground truncate">
+              {/* Top row: Name + Status */}
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-[15px] font-semibold text-foreground truncate">
                   {contract.worker_name}
-                </p>
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(contract.status)}
-                  {/* Edit button for pending/draft contracts */}
-                  {isPending && canEdit && !isSelectionMode && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/employer/create?edit=${contract.id}`);
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors flex items-center gap-1.5"
-                      title={`수정 가능 (${remainingDays}일 남음)`}
-                    >
-                      <Edit className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-xs font-medium text-primary">수정하기</span>
-                    </button>
-                  )}
-                </div>
+                </h3>
+                {getStatusBadge(contract.status)}
               </div>
-              <div className="space-y-1">
+              
+              {/* Bottom row: Details */}
+              <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
                 {contract.business_name && (
-                  <div className="flex items-center gap-1.5 text-caption text-muted-foreground">
-                    <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate">{contract.business_name}</span>
-                  </div>
+                  <>
+                    <span className="truncate max-w-[100px]">{contract.business_name}</span>
+                    <span className="text-border">•</span>
+                  </>
                 )}
-                <div className="flex items-center gap-3 text-caption text-muted-foreground">
-                  {isPending ? (
-                    <>
-                      <span>시급 {contract.hourly_wage.toLocaleString()}원</span>
-                      <span>·</span>
-                      <span>{contract.work_days.length > 3 ? `주 ${contract.work_days.length}일` : contract.work_days.join(', ')}</span>
-                      {canEdit && remainingDays <= 3 && (
-                        <>
-                          <span>·</span>
-                          <span className="text-warning font-medium">수정 {remainingDays}일 남음</span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <span>{contract.start_date} 시작</span>
-                      <span>·</span>
-                      <span>{contract.work_start_time} ~ {contract.work_end_time}</span>
-                    </>
-                  )}
-                </div>
+                <span className="font-medium text-foreground/70">
+                  {contract.hourly_wage.toLocaleString()}원
+                </span>
+                <span className="text-border">•</span>
+                <span>
+                  {contract.work_days.length > 3 
+                    ? `주${contract.work_days.length}일` 
+                    : contract.work_days.slice(0, 3).join('·')}
+                </span>
               </div>
             </div>
+            
+            {/* Right side: Edit button or Arrow */}
             {!isSelectionMode && (
-              <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-1" />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {isPending && canEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/employer/create?edit=${contract.id}`);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs font-medium"
+                  >
+                    수정
+                  </button>
+                )}
+                <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
+              </div>
             )}
           </div>
+          
+          {/* Warning badge for expiring edit period */}
+          {isPending && canEdit && remainingDays <= 3 && remainingDays > 0 && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center gap-1.5 text-xs text-warning">
+                <Clock className="w-3.5 h-3.5" />
+                <span>수정 가능 기간 {remainingDays}일 남음</span>
+              </div>
+            </div>
+          )}
         </CardSlide>
       </motion.div>
     );
