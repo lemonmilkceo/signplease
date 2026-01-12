@@ -102,10 +102,17 @@ export function ShareContractModal({
     // Try to open KakaoTalk
     window.location.href = kakaoUrl;
 
-    // Fallback: After a short delay, if still on page, offer web share
+    // Show success toast and navigate to home
+    toast({
+      title: "공유 완료",
+      description: "카카오톡으로 계약서가 공유되었습니다.",
+    });
+    onOpenChange(false);
+    
+    // Navigate to employer dashboard after a short delay
     setTimeout(() => {
-      handleWebShareFallback();
-    }, 1500);
+      window.location.href = "/employer";
+    }, 500);
   };
 
   const handleWebShareFallback = async () => {
