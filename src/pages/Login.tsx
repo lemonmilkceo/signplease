@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Phone, Lock, Eye, EyeOff } from "lucide-react";
 
+const REMEMBER_ME_KEY = "signplease_remember_me";
+
 export default function Login() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem(REMEMBER_ME_KEY) === "true";
+  });
   const [formData, setFormData] = useState({
     phoneOrEmail: "",
     password: "",
@@ -80,6 +86,9 @@ export default function Login() {
       }
 
       if (data.user) {
+        // Save remember me preference
+        localStorage.setItem(REMEMBER_ME_KEY, rememberMe.toString());
+        
         toast.success("로그인되었습니다!");
         navigate("/select-role");
       }
@@ -90,6 +99,18 @@ export default function Login() {
       setIsLoading(false);
     }
   };
+
+  // Clear session on browser close if remember me is disabled
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!rememberMe && localStorage.getItem(REMEMBER_ME_KEY) !== "true") {
+        supabase.auth.signOut();
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [rememberMe]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -174,8 +195,21 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Forgot Password Link */}
-          <div className="text-right">
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <label
+                htmlFor="rememberMe"
+                className="text-sm text-muted-foreground cursor-pointer"
+              >
+                로그인 유지
+              </label>
+            </div>
             <button
               type="button"
               onClick={() => toast.info("비밀번호 찾기 기능은 준비 중입니다")}
