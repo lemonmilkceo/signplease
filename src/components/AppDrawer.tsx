@@ -194,7 +194,7 @@ export function AppDrawer({ userType }: AppDrawerProps) {
 
         {/* App Version */}
         <div className="absolute bottom-6 left-0 right-0 text-center">
-          <p className="text-xs text-muted-foreground">알바계약 v1.0.0</p>
+          <p className="text-xs text-muted-foreground">싸인해주세요 v1.0.0</p>
         </div>
       </SheetContent>
     </Sheet>
