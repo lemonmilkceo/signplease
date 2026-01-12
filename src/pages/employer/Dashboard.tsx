@@ -764,7 +764,26 @@ export default function EmployerDashboard() {
           <DialogHeader>
             <DialogTitle>폴더로 이동</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 py-4">
+          <div className="space-y-2 py-4 max-h-[60vh] overflow-y-auto">
+            {/* Create New Folder Button */}
+            <button
+              onClick={() => {
+                setShowMoveDialog(false);
+                setEditingFolder(null);
+                setNewFolderName('');
+                setNewFolderColor('gray');
+                setShowFolderDialog(true);
+              }}
+              className="w-full p-3 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5 flex items-center gap-3 text-left transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Plus className="w-5 h-5 text-primary" />
+              </div>
+              <span className="font-medium text-primary">새 폴더 만들기</span>
+            </button>
+            
+            <div className="border-t border-border my-2" />
+            
             <button
               onClick={() => handleMoveToFolder(null)}
               className="w-full p-3 rounded-lg hover:bg-muted flex items-center gap-3 text-left transition-colors"
