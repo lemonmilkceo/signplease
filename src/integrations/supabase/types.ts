@@ -363,6 +363,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
+      is_contract_employer: {
+        Args: { p_contract_id: string; p_user_id: string }
+        Returns: boolean
+      }
       normalize_phone: { Args: { phone: string }; Returns: string }
       use_credit: { Args: { p_user_id: string }; Returns: boolean }
       use_legal_review: { Args: { p_user_id: string }; Returns: boolean }
