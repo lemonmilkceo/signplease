@@ -31,9 +31,11 @@ import {
   Zap,
   Edit,
   Download,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getContract, signContractAsEmployer, Contract } from "@/lib/contract-api";
+import { getOrCreateChatRoom } from "@/lib/chat-api";
 import { supabase } from "@/integrations/supabase/client";
 import { parseWorkTime, calculateMonthlyWageBreakdown, calculateWeeklyHolidayPay } from "@/lib/wage-utils";
 import { generateContractPDF, ContractPDFData } from "@/lib/pdf-utils";
@@ -712,6 +714,41 @@ export default function ContractPreview() {
               </div>
               <span className="text-body font-medium">사업주 서명 완료</span>
             </motion.div>
+            {/* Chat with Worker Button - Only show if worker has signed */}
+            {contract.worker_id && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="full"
+                      onClick={async () => {
+                        if (!user || !contract.worker_id) return;
+                        try {
+                          await getOrCreateChatRoom(user.id, contract.worker_id);
+                          navigate('/employer/chat');
+                        } catch (error) {
+                          console.error('Error creating chat room:', error);
+                          toast.error('채팅방 생성에 실패했습니다');
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      {contract.worker_name}님과 대화하기
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>임금명세서나 파일을 보낼 수 있어요 💬</p>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
+            )}
+            
             {/* PDF Download Button */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}

@@ -541,14 +541,6 @@ export default function EmployerDashboard() {
             <Plus className="w-5 h-5" />
             새 계약서 작성
           </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate('/employer/chat')}
-            className="flex-shrink-0"
-          >
-            <MessageCircle className="w-5 h-5" />
-          </Button>
           {!isDemo && (
             <Button
               variant="outline"
