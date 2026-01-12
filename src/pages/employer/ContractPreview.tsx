@@ -63,6 +63,8 @@ export default function ContractPreview() {
   const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [remainingReviews, setRemainingReviews] = useState<number>(5);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -114,6 +116,31 @@ export default function ContractPreview() {
     fetchContract();
   }, [id, isDemo, demoContracts]);
 
+  // 남은 노무사 검토 횟수 조회
+  useEffect(() => {
+    const fetchRemainingReviews = async () => {
+      if (!user || isDemo) {
+        setIsLoadingReviews(false);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase.rpc('get_remaining_legal_reviews', {
+          p_user_id: user.id
+        });
+        
+        if (error) throw error;
+        setRemainingReviews(data ?? 5);
+      } catch (error) {
+        console.error("Error fetching remaining reviews:", error);
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+
+    fetchRemainingReviews();
+  }, [user, isDemo]);
+
   const handleSign = async (signatureData: string) => {
     if (!contract) return;
 
@@ -143,10 +170,35 @@ export default function ContractPreview() {
       return;
     }
 
+    // 크레딧 확인
+    if (remainingReviews <= 0) {
+      toast.error("무료 검토 횟수를 모두 사용했습니다. 추가 결제가 필요합니다.");
+      navigate('/pricing');
+      return;
+    }
+
     setIsLegalAdviceOpen(true);
     setIsLoadingAdvice(true);
 
     try {
+      // 크레딧 차감
+      if (user && !isDemo) {
+        const { data: creditUsed, error: creditError } = await supabase.rpc('use_legal_review', {
+          p_user_id: user.id
+        });
+        
+        if (creditError) throw creditError;
+        if (!creditUsed) {
+          toast.error("검토 크레딧이 부족합니다.");
+          setIsLegalAdviceOpen(false);
+          setIsLoadingAdvice(false);
+          return;
+        }
+        
+        // 남은 횟수 업데이트
+        setRemainingReviews(prev => Math.max(0, prev - 1));
+      }
+
       const contractData = {
         employerName: contract?.employer_name || '',
         workerName: contract?.worker_name || '',
@@ -626,7 +678,8 @@ export default function ContractPreview() {
             {/* AI 노무사 검토 Button - 업셀링 */}
             <motion.button
               onClick={handleGetLegalAdvice}
-              className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 dark:from-amber-900/30 dark:via-orange-900/20 dark:to-yellow-900/20 border-2 border-amber-300 dark:border-amber-700 flex items-center gap-3 hover:shadow-lg hover:border-amber-400 transition-all relative overflow-hidden"
+              disabled={isLoadingReviews}
+              className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 dark:from-amber-900/30 dark:via-orange-900/20 dark:to-yellow-900/20 border-2 border-amber-300 dark:border-amber-700 flex items-center gap-3 hover:shadow-lg hover:border-amber-400 transition-all relative overflow-hidden disabled:opacity-50"
               whileTap={{ scale: 0.98 }}
             >
               {/* 반짝이는 효과 */}
@@ -652,11 +705,21 @@ export default function ContractPreview() {
                   전문 노무사 수준의 법적 검토를 받아보세요
                 </p>
                 <div className="flex items-center gap-2 mt-1.5">
-                  <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-[10px] font-semibold text-green-700 dark:text-green-300">
-                    🎁 첫 가입 5회 무료
-                  </span>
+                  {isLoadingReviews ? (
+                    <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] font-semibold text-gray-500">
+                      로딩중...
+                    </span>
+                  ) : remainingReviews > 0 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-[10px] font-semibold text-green-700 dark:text-green-300">
+                      🎁 무료 {remainingReviews}회 남음
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/50 text-[10px] font-semibold text-red-700 dark:text-red-300">
+                      ⚠️ 무료 소진 - 충전 필요
+                    </span>
+                  )}
                   <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
-                    이후 1회 1,000원
+                    추가 1회 1,000원
                   </span>
                 </div>
               </div>

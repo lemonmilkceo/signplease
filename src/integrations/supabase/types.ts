@@ -227,6 +227,36 @@ export type Database = {
           },
         ]
       }
+      legal_review_credits: {
+        Row: {
+          created_at: string
+          free_reviews: number
+          id: string
+          paid_reviews: number
+          total_used: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          free_reviews?: number
+          id?: string
+          paid_reviews?: number
+          total_used?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          free_reviews?: number
+          id?: string
+          paid_reviews?: number
+          total_used?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bank_account: string | null
@@ -305,7 +335,12 @@ export type Database = {
     }
     Functions: {
       get_remaining_credits: { Args: { p_user_id: string }; Returns: number }
+      get_remaining_legal_reviews: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       use_credit: { Args: { p_user_id: string }; Returns: boolean }
+      use_legal_review: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
