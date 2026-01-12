@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 interface Profile {
   id: string;
@@ -34,11 +35,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const hadSessionRef = useRef(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Detect session expiration (had session before, now signed out)
+        if (event === 'SIGNED_OUT' && hadSessionRef.current) {
+          toast.info('세션이 만료되었습니다. 다시 로그인해주세요.');
+          // Redirect to login page
+          window.location.href = '/login';
+        }
+        
+        // Track if user has had a session
+        if (session?.user) {
+          hadSessionRef.current = true;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -67,6 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Track if user already has a session on load
+      if (session?.user) {
+        hadSessionRef.current = true;
+      }
       
       if (session?.user) {
         supabase
