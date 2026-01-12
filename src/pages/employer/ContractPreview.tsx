@@ -270,11 +270,15 @@ export default function ContractPreview() {
 
   // 근무일수 포맷팅
   const formatWorkDays = () => {
-    // DB에 저장된 work_days_per_week 우선, 없으면 contractForm
-    const daysPerWeek = contract?.work_days_per_week ?? contractForm.workDaysPerWeek;
-    if (daysPerWeek) {
-      return `주 ${daysPerWeek}일`;
+    // DB에 저장된 work_days_per_week 우선 확인
+    if (contract?.work_days_per_week) {
+      return `주 ${contract.work_days_per_week}일`;
     }
+    // contractForm의 workDaysPerWeek 확인
+    if (contractForm.workDaysPerWeek) {
+      return `주 ${contractForm.workDaysPerWeek}일`;
+    }
+    // 특정 요일이 설정된 경우
     if (contract?.work_days && contract.work_days.length > 0) {
       return contract.work_days.join(', ');
     }
