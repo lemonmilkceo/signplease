@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, Send, Paperclip, Image as ImageIcon, 
-  FileText, X, Loader2, Download, User 
+  FileText, X, Loader2, Download, User, Trash2 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,24 @@ import {
   getChatMessages, 
   sendMessage, 
   markMessagesAsRead,
-  uploadChatFile 
+  uploadChatFile,
+  deleteMessage 
 } from "@/lib/chat-api";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ChatViewProps {
   room: ChatRoom;
@@ -34,6 +45,8 @@ export function ChatView({ room, userType, onBack }: ChatViewProps) {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<ChatMessage | null>(null);
+  const [deleting, setDeleting] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +100,19 @@ export function ChatView({ room, userType, onBack }: ChatViewProps) {
           }
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "chat_messages",
+          filter: `room_id=eq.${room.id}`,
+        },
+        (payload) => {
+          const deletedMessage = payload.old as ChatMessage;
+          setMessages((prev) => prev.filter(m => m.id !== deletedMessage.id));
+        }
+      )
       .subscribe();
 
     return () => {
@@ -97,6 +123,23 @@ export function ChatView({ room, userType, onBack }: ChatViewProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleDeleteMessage = async () => {
+    if (!messageToDelete || !user) return;
+
+    setDeleting(true);
+    try {
+      await deleteMessage(messageToDelete.id, user.id);
+      setMessages((prev) => prev.filter(m => m.id !== messageToDelete.id));
+      toast.success("메시지가 삭제되었습니다");
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast.error("메시지 삭제에 실패했습니다");
+    } finally {
+      setDeleting(false);
+      setMessageToDelete(null);
+    }
+  };
 
   const handleSend = async () => {
     if (!user || (!inputText.trim() && !previewFile)) return;
@@ -196,7 +239,7 @@ export function ChatView({ room, userType, onBack }: ChatViewProps) {
         key={message.id}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}
+        className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2 group`}
       >
         <div className={`flex items-end gap-2 max-w-[80%] ${isMe ? "flex-row-reverse" : ""}`}>
           {!isMe && (
@@ -259,9 +302,20 @@ export function ChatView({ room, userType, onBack }: ChatViewProps) {
               </div>
             )}
           </div>
-          <span className={`text-xs text-muted-foreground flex-shrink-0 ${isMe ? "text-right" : ""}`}>
-            {formatMessageTime(message.created_at)}
-          </span>
+          <div className={`flex items-center gap-1 flex-shrink-0 ${isMe ? "flex-row-reverse" : ""}`}>
+            <span className={`text-xs text-muted-foreground ${isMe ? "text-right" : ""}`}>
+              {formatMessageTime(message.created_at)}
+            </span>
+            {isMe && (
+              <button
+                onClick={() => setMessageToDelete(message)}
+                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 rounded transition-opacity"
+                title="삭제"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     );
@@ -404,6 +458,28 @@ export function ChatView({ room, userType, onBack }: ChatViewProps) {
           </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!messageToDelete} onOpenChange={(open) => !open && setMessageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>메시지 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 메시지를 삭제하시겠습니까? 삭제된 메시지는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMessage}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "삭제 중..." : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

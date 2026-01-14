@@ -180,7 +180,7 @@ export function ChatRoomList({ userType, onSelectRoom }: ChatRoomListProps) {
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                         <User className="w-6 h-6 text-muted-foreground" />
                       </div>
-                      {room.unread_count && room.unread_count > 0 && (
+                      {room.unread_count !== undefined && room.unread_count > 0 && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                           <span className="text-xs font-bold text-primary-foreground">
                             {room.unread_count > 9 ? "9+" : room.unread_count}
