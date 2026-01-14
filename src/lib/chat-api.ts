@@ -289,3 +289,14 @@ export async function getEmployerWorkers(employerId: string): Promise<Array<{ id
     email: (profiles || []).find((p: any) => p.user_id === id)?.email || null,
   }));
 }
+
+// Delete a message
+export async function deleteMessage(messageId: string, senderId: string): Promise<void> {
+  const { error } = await supabase
+    .from("chat_messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("sender_id", senderId);
+
+  if (error) throw error;
+}
