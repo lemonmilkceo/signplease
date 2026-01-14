@@ -8,6 +8,7 @@ import {
   createFolder, deleteFolder, moveContractsToFolder, updateFolder 
 } from "@/lib/contract-api";
 import { getUserPreferences, saveUserPreferences, SortOption } from "@/lib/preferences-api";
+import { getWorkerChatRooms } from "@/lib/chat-api";
 import { 
   FileText, ChevronRight, Clock, CheckCircle2, Loader2, Building2, Wallet, MessageCircle,
   X, Trash2, FolderPlus, MoreVertical, Folder, Edit2, FolderOpen, ArrowUpDown, 
@@ -197,6 +198,7 @@ export default function WorkerDashboard() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [folders, setFolders] = useState<ContractFolder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   
   // Selection mode
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -268,15 +270,20 @@ export default function WorkerDashboard() {
 
         setContracts(visibleContracts);
         
-        // Fetch folders, preferences, and trashed contracts
+        // Fetch folders, preferences, trashed contracts, and chat unread count
         if (user) {
-          const [foldersData, prefsData, trashedData] = await Promise.all([
+          const [foldersData, prefsData, trashedData, chatRooms] = await Promise.all([
             getFolders(user.id),
             getUserPreferences(user.id, 'worker'),
-            getWorkerTrashedContracts(user.id)
+            getWorkerTrashedContracts(user.id),
+            getWorkerChatRooms(user.id)
           ]);
           setFolders(foldersData);
           setTrashedContracts(trashedData);
+          
+          // Calculate total unread messages
+          const totalUnread = chatRooms.reduce((sum, room) => sum + (room.unread_count || 0), 0);
+          setUnreadChatCount(totalUnread);
           
           // Load saved preferences
           if (prefsData) {
@@ -709,9 +716,14 @@ export default function WorkerDashboard() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/worker/chat')}
-                className="p-2 rounded-full hover:bg-muted transition-colors"
+                className="relative p-2 rounded-full hover:bg-muted transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
+                {unreadChatCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center px-1">
+                    {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                  </span>
+                )}
               </button>
               <AppDrawer userType="worker" />
             </div>
