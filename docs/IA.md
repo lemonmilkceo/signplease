@@ -1,8 +1,8 @@
-# 싸인해주세요 (Sik-Contract) - Information Architecture
+# 싸인해주세요 (signplease) - Information Architecture
 
 ## 📌 서비스 개요
 
-- **서비스명**: 싸인해주세요 (Sik-Contract)
+- **서비스명**: 싸인해주세요 (signplease)
 - **목적**: AI 기반 아르바이트 표준근로계약서 작성 및 전자서명 서비스
 - **타겟 사용자**: 식당/카페 사장님 및 아르바이트생
 - **플랫폼**: 모바일 웹 (PWA)
@@ -69,7 +69,7 @@ Splash → Onboarding → Signup/Login → Select Role → Dashboard
 ### 2. 사업자 계약서 작성 플로우
 
 ```
-Dashboard 
+Dashboard
     → Create Contract (Step-by-Step)
         → Step 1: 사업장 규모 선택 (5인 미만/이상)
         → Step 2: 근로자 이름 입력
@@ -250,18 +250,20 @@ supabase/functions/
 ## 🔐 인증 및 권한
 
 ### 인증 방식
+
 - Google OAuth 2.0 (Supabase Auth)
 - 이메일/비밀번호
 
 ### 역할 기반 접근 제어
 
-| 역할 | 접근 가능 영역 |
-|------|---------------|
-| 미인증 | Splash, Onboarding, Login, Signup, Terms, Privacy |
-| 사업자 (Employer) | /employer/*, /pricing, /profile, /chat |
-| 근로자 (Worker) | /worker/*, /pricing, /profile, /chat |
+| 역할              | 접근 가능 영역                                    |
+| ----------------- | ------------------------------------------------- |
+| 미인증            | Splash, Onboarding, Login, Signup, Terms, Privacy |
+| 사업자 (Employer) | /employer/\*, /pricing, /profile, /chat           |
+| 근로자 (Worker)   | /worker/\*, /pricing, /profile, /chat             |
 
 ### RLS 정책 요약
+
 - 계약서: 본인이 작성한 계약서만 조회/수정 가능
 - 채팅: 참여 중인 채팅방만 접근 가능
 - 프로필: 본인 프로필만 수정 가능
@@ -281,6 +283,7 @@ supabase/functions/
 ## 🎯 핵심 사용자 시나리오
 
 ### 시나리오 1: 첫 계약서 작성 (사장님)
+
 1. 앱 접속 → 온보딩 확인
 2. 구글 로그인
 3. "사장님" 역할 선택
@@ -290,6 +293,7 @@ supabase/functions/
 7. 서명 후 카카오톡으로 공유
 
 ### 시나리오 2: 계약서 서명 (알바생)
+
 1. 카카오톡 링크 클릭
 2. 구글 로그인 (또는 회원가입)
 3. 계약 조건 카드 확인
@@ -298,6 +302,7 @@ supabase/functions/
 6. PDF 저장
 
 ### 시나리오 3: 경력 관리 (알바생)
+
 1. 대시보드 → 경력 관리
 2. 완료된 계약 목록 확인
 3. 경력증명서 다운로드
@@ -306,12 +311,12 @@ supabase/functions/
 
 ## 📈 버전 히스토리
 
-| 버전 | 날짜 | 주요 변경사항 |
-|------|------|--------------|
-| 1.0 | 2025-01 | 초기 버전 - 계약서 작성/서명 |
-| 1.1 | 2025-02 | 채팅 기능 추가 |
-| 1.2 | 2025-03 | AI 법률 검토 기능 |
-| 1.3 | 2025-04 | 폴더 관리, 휴지통 기능 |
+| 버전 | 날짜    | 주요 변경사항                |
+| ---- | ------- | ---------------------------- |
+| 1.0  | 2025-01 | 초기 버전 - 계약서 작성/서명 |
+| 1.1  | 2025-02 | 채팅 기능 추가               |
+| 1.2  | 2025-03 | AI 법률 검토 기능            |
+| 1.3  | 2025-04 | 폴더 관리, 휴지통 기능       |
 
 ---
 
