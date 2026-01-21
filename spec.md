@@ -1,8 +1,8 @@
-# [Spec.md] AI 기반 모바일 근로계약서 서비스: Sik-Contract
+# [Spec.md] AI 기반 모바일 근로계약서 서비스: 싸인해주세요
 
 ## 1. 서비스 개요
 
-- **서비스명**: 식콘 (Sik-Contract)
+- **서비스명**: 싸인해주세요 (signplease)
 - **타겟**: 복잡한 법률 용어가 어려운 식당 사장님 및 아르바이트생
 - **핵심 가치**: 토스(Toss) 스타일의 심플한 UX, AI를 통한 자동 조항 생성, 비대면 서명
 - **플랫폼**: 모바일 웹/앱 (사업자용 / 근로자용 분리)
@@ -29,13 +29,13 @@
 
 ## 3. 기술 스택 (Technical Stack)
 
-| 구분 | 기술 스택 | 비고 |
-|------|-----------|------|
-| Frontend | React (Vite) / PWA | 토스 스타일 UI 컴포넌트 라이브러리 활용 |
-| Backend | Supabase Edge Functions | AI 연동을 위한 확장성 고려 |
-| Database | Supabase (PostgreSQL) | 계약 정보 및 서명 이미지 경로 저장 |
-| AI 모델 | OpenAI GPT-4o / Lovable AI | 계약서 초안 생성 및 조항 해석 |
-| 인증 | Google OAuth 2.0 | Supabase Auth 활용 |
+| 구분     | 기술 스택               | 비고                                    |
+| -------- | ----------------------- | --------------------------------------- |
+| Frontend | React (Vite) / PWA      | 토스 스타일 UI 컴포넌트 라이브러리 활용 |
+| Backend  | Supabase Edge Functions | AI 연동을 위한 확장성 고려              |
+| Database | Supabase (PostgreSQL)   | 계약 정보 및 서명 이미지 경로 저장      |
+| AI 모델  | OpenAI GPT-4o /         | 계약서 초안 생성 및 조항 해석           |
+| 인증     | Google OAuth 2.0        | Supabase Auth 활용                      |
 
 ## 4. 상세 화면 설계 (UI Flow)
 
